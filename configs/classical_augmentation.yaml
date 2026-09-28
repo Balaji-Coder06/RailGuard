@@ -1,0 +1,92 @@
+# ============================================================
+# RailGuard — Classical Augmentation Experiment Configuration
+# ============================================================
+#
+# Experiment: ResNet-18 trained on the classical_augmentation
+#             dataset, where 4 minority defect classes are
+#             augmented to 200 training images each via
+#             affine/photometric transforms.
+#
+# Dataset:    data/experiments/classical_augmentation/railway_defects_8class
+# Source:     data/prepared/railway_defects_8class (base)
+#
+# This config reflects the parameters actually implemented in
+# augment_dataset.py and train_baseline.py (future dedicated
+# train_classical_augmentation.py should inherit this config).
+# ============================================================
+
+experiment_name: classical_augmentation
+description: "ResNet-18 trained on class-balanced dataset using classical image augmentation"
+
+model:
+  architecture: resnet18
+  pretrained: true           # ResNet18_Weights.DEFAULT (ImageNet)
+  num_classes: 8
+
+dataset:
+  name: railway_defects_8class_classical_augmented
+  path: data/experiments/classical_augmentation/railway_defects_8class
+  base_dataset: data/prepared/railway_defects_8class
+  splits:
+    train: train
+    val: val
+    test: test
+  seed: 42
+  classes:
+    - Cracks
+    - Flakings
+    - Grooves
+    - Joints
+    - Normal
+    - Shellings
+    - Spallings
+    - Squats
+
+augmentation:
+  # Offline augmentations applied to minority classes during dataset generation
+  # (see src/data/augment_dataset.py)
+  targets:
+    Cracks: 200
+    Grooves: 200
+    Joints: 200
+    Shellings: 200
+  transforms:
+    random_rotation_degrees: 7
+    random_affine:
+      translate: [0.04, 0.04]
+      scale: [0.95, 1.05]
+    color_jitter:
+      brightness: 0.15
+      contrast: 0.15
+      saturation: 0.10
+    gaussian_blur:
+      kernel_size: 3
+      sigma: [0.1, 1.0]
+      probability: 0.20
+
+training:
+  epochs: 15
+  batch_size: 32
+  learning_rate: 0.0001
+  optimizer: AdamW
+  loss: CrossEntropyLoss
+  class_weights: inverse_frequency
+  num_workers: 0
+  image_size: [224, 224]
+
+online_augmentation:
+  # Applied per batch during training
+  random_horizontal_flip: true
+  random_rotation_degrees: 10
+  color_jitter:
+    brightness: 0.2
+    contrast: 0.2
+
+evaluation:
+  normalization:
+    mean: [0.485, 0.456, 0.406]
+    std: [0.229, 0.224, 0.225]
+
+output:
+  checkpoint: models/checkpoints/railguard_resnet18_classical_augmented.pth
+  confusion_matrix: research/results/confusion_matrices/classical_augmentation_confusion_matrix.png

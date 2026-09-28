@@ -1,0 +1,66 @@
+# ============================================================
+# RailGuard — Baseline Experiment Configuration
+# ============================================================
+#
+# Experiment: Real-data ResNet-18 baseline.
+# Dataset:    data/prepared/railway_defects_8class
+# Notes:      Trained on 7 surface fault classes (surface_faults dataset)
+#             plus Normal class from Kaggle non-defective images.
+#             Class-imbalance handled via inverse-frequency loss weights.
+#
+# This config reflects the parameters used in the existing
+# baseline experiment. Do NOT change values unless re-running.
+# ============================================================
+
+experiment_name: baseline
+description: "ResNet-18 trained on the real 8-class prepared dataset without augmentation"
+
+model:
+  architecture: resnet18
+  pretrained: true           # ResNet18_Weights.DEFAULT (ImageNet)
+  num_classes: 8
+
+dataset:
+  name: railway_defects_8class
+  path: data/prepared/railway_defects_8class
+  splits:
+    train: train
+    val: val
+    test: test
+  seed: 42
+  classes:
+    - Cracks
+    - Flakings
+    - Grooves
+    - Joints
+    - Normal
+    - Shellings
+    - Spallings
+    - Squats
+
+training:
+  epochs: 15
+  batch_size: 32
+  learning_rate: 0.0001
+  optimizer: AdamW
+  loss: CrossEntropyLoss
+  class_weights: inverse_frequency   # total / (num_classes * class_count)
+  num_workers: 0
+  image_size: [224, 224]
+
+augmentation:
+  # Online augmentations applied per batch during training only
+  random_horizontal_flip: true
+  random_rotation_degrees: 10
+  color_jitter:
+    brightness: 0.2
+    contrast: 0.2
+
+evaluation:
+  normalization:
+    mean: [0.485, 0.456, 0.406]
+    std: [0.229, 0.224, 0.225]
+
+output:
+  checkpoint: models/checkpoints/railguard_resnet18_real_baseline.pth
+  confusion_matrix: research/results/confusion_matrices/baseline_confusion_matrix.png

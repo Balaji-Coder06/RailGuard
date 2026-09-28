@@ -1,0 +1,59 @@
+# ============================================================
+# RailGuard — Generated Data Experiment Configuration
+# ============================================================
+#
+# Experiment: ResNet-18 training augmented with AI-generated
+#             synthetic defect images.
+#
+# Status: PLANNED — This experiment has not yet been conducted.
+#
+# This configuration is a template for the future generated-
+# data experiment. Parameters marked with [TBD] must be
+# confirmed once the generative pipeline is designed.
+# ============================================================
+
+experiment_name: generated_data
+description: "ResNet-18 trained on dataset augmented with AI-generated synthetic defect images"
+status: planned
+
+model:
+  architecture: resnet18           # [TBD] may change to other backbone
+  pretrained: true
+  num_classes: 8
+
+dataset:
+  name: railway_defects_8class_generated    # [TBD]
+  path: data/experiments/generated_data     # [TBD — to be defined]
+  base_dataset: data/prepared/railway_defects_8class
+  splits:
+    train: train
+    val: val
+    test: test
+  seed: 42
+  classes:
+    - Cracks
+    - Flakings
+    - Grooves
+    - Joints
+    - Normal
+    - Shellings
+    - Spallings
+    - Squats
+
+training:
+  epochs: 15                        # [TBD]
+  batch_size: 32                    # [TBD]
+  learning_rate: 0.0001             # [TBD]
+  optimizer: AdamW                  # [TBD]
+  loss: CrossEntropyLoss            # [TBD]
+  class_weights: inverse_frequency  # [TBD]
+  num_workers: 0
+  image_size: [224, 224]
+
+evaluation:
+  normalization:
+    mean: [0.485, 0.456, 0.406]
+    std: [0.229, 0.224, 0.225]
+
+output:
+  checkpoint: models/checkpoints/railguard_resnet18_generated.pth    # [TBD]
