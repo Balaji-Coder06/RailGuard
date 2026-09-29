@@ -225,6 +225,11 @@ def finalise_model_info(
     training_epochs: int,
     best_epoch: int,
     checkpoint_path: str,
+    best_val_loss: float | None = None,
+    best_val_accuracy: float | None = None,
+    test_accuracy: float | None = None,
+    macro_f1: float | None = None,
+    weighted_f1: float | None = None,
 ) -> None:
     """
     Write the final model_info.json for a completed training run.
@@ -241,6 +246,11 @@ def finalise_model_info(
     training_epochs : int
     best_epoch : int
     checkpoint_path : str
+    best_val_loss : float, optional
+    best_val_accuracy : float, optional
+    test_accuracy : float, optional
+    macro_f1 : float, optional
+    weighted_f1 : float, optional
     """
     info = {
         "experiment": experiment,
@@ -255,6 +265,123 @@ def finalise_model_info(
         "status": "completed",
         "created_at": datetime.now().isoformat(timespec="seconds"),
     }
+    if best_val_loss is not None:
+        info["best_val_loss"] = round(best_val_loss, 6)
+    if best_val_accuracy is not None:
+        info["best_val_accuracy"] = round(best_val_accuracy, 6)
+    if test_accuracy is not None:
+        info["test_accuracy"] = round(test_accuracy, 6)
+    if macro_f1 is not None:
+        info["macro_f1"] = round(macro_f1, 6)
+    if weighted_f1 is not None:
+        info["weighted_f1"] = round(weighted_f1, 6)
+
     (run_dir / "model_info.json").write_text(
         json.dumps(info, indent=4), encoding="utf-8"
     )
+
+
+def record_experiment_in_registry(
+    run_id: str,
+    experiment: str,
+    date: str,
+    model: str,
+    dataset: str,
+    train_images: int,
+    validation_images: int,
+    test_images: int,
+    epochs: int,
+    best_epoch: int,
+    test_accuracy: float,
+    macro_f1: float,
+    checkpoint: str,
+    status: str = "completed",
+    notes: str = "",
+    root: Path | None = None,
+) -> Path:
+    """
+    Append or update an experiment record in research/experiments/experiment_registry.csv.
+
+    Parameters
+    ----------
+    run_id : str
+    experiment : str
+    date : str
+    model : str
+    dataset : str
+    train_images : int
+    validation_images : int
+    test_images : int
+    epochs : int
+    best_epoch : int
+    test_accuracy : float
+    macro_f1 : float
+    checkpoint : str
+    status : str, optional
+    notes : str, optional
+    root : Path, optional
+
+    Returns
+    -------
+    Path
+        Path to the updated experiment_registry.csv.
+    """
+    if root is None:
+        root = Path(__file__).resolve().parents[2]
+
+    registry_path = root / "research" / "experiments" / "experiment_registry.csv"
+    registry_path.parent.mkdir(parents=True, exist_ok=True)
+
+    fieldnames = [
+        "run_id", "experiment", "date", "model", "dataset",
+        "train_images", "validation_images", "test_images",
+        "epochs", "best_epoch", "test_accuracy", "macro_f1",
+        "checkpoint", "status", "notes"
+    ]
+
+    new_row = {
+        "run_id": run_id,
+        "experiment": experiment,
+        "date": date,
+        "model": model,
+        "dataset": dataset,
+        "train_images": str(train_images),
+        "validation_images": str(validation_images),
+        "test_images": str(test_images),
+        "epochs": str(epochs),
+        "best_epoch": str(best_epoch),
+        "test_accuracy": f"{test_accuracy:.4f}" if isinstance(test_accuracy, (int, float)) else str(test_accuracy),
+        "macro_f1": f"{macro_f1:.4f}" if isinstance(macro_f1, (int, float)) else str(macro_f1),
+        "checkpoint": checkpoint,
+        "status": status,
+        "notes": notes,
+    }
+
+    rows: list[dict[str, str]] = []
+    if registry_path.exists():
+        with registry_path.open("r", newline="", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            rows = list(reader)
+
+    # If run_id already exists, update it; otherwise insert before planned rows or append
+    inserted = False
+    for idx, r in enumerate(rows):
+        if r.get("run_id") == run_id:
+            rows[idx] = new_row
+            inserted = True
+            break
+        if not r.get("run_id") and r.get("status") == "planned":
+            rows.insert(idx, new_row)
+            inserted = True
+            break
+
+    if not inserted:
+        rows.append(new_row)
+
+    with registry_path.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+
+    return registry_path
+

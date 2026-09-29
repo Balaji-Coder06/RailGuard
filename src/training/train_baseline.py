@@ -11,11 +11,12 @@ Usage
     # From the repository root:
     python src/training/train_baseline.py
 
-    # With an explicit config (future):
+    # With an explicit config:
     python src/training/train_baseline.py --config configs/baseline.yaml
+    python src/training/train_baseline.py --config configs/classical_augmentation.yaml
 
 Run outputs are saved to:
-    runs/baseline/<YYYY-MM-DD_NNN>/
+    runs/<experiment_name>/<YYYY-MM-DD_NNN>/
         config.yaml
         training.log
         metrics.csv
@@ -25,9 +26,10 @@ Run outputs are saved to:
         training_curve.png
 
 The best model checkpoint is saved to:
-    models/checkpoints/railguard_resnet18_real_baseline.pth
+    models/checkpoints/<checkpoint_from_config>.pth
 """
 
+import argparse
 import random
 import sys
 import json
@@ -57,15 +59,28 @@ from src.utils.run_manager import (
     setup_run_logger,
     append_epoch_metrics,
     finalise_model_info,
+    record_experiment_in_registry,
 )
 from src.config.config_loader import load_config
+
 
 
 # =========================
 # CONFIG
 # =========================
 
-CONFIG_PATH = ROOT / "configs" / "baseline.yaml"
+parser = argparse.ArgumentParser(description="RailGuard training pipeline")
+parser.add_argument(
+    "--config",
+    type=str,
+    default=str(ROOT / "configs" / "baseline.yaml"),
+    help="Path to experiment YAML config (default: configs/baseline.yaml)",
+)
+args = parser.parse_args()
+
+CONFIG_PATH = Path(args.config)
+if not CONFIG_PATH.is_absolute():
+    CONFIG_PATH = ROOT / CONFIG_PATH
 cfg = load_config(CONFIG_PATH)
 
 EXPERIMENT = cfg["experiment_name"]
@@ -214,8 +229,9 @@ log.info(f"Optimizer  : AdamW")
 # TRAINING LOOP
 # =========================
 
-best_val_loss = float("inf")
-best_epoch    = -1
+best_val_loss     = float("inf")
+best_val_accuracy = 0.0
+best_epoch        = -1
 
 MODEL_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -285,15 +301,16 @@ for epoch in range(EPOCHS):
 
     # ---- Checkpoint ----
     if val_loss < best_val_loss:
-        best_val_loss = val_loss
-        best_epoch    = epoch + 1
+        best_val_loss     = val_loss
+        best_val_accuracy = val_accuracy
+        best_epoch        = epoch + 1
 
         torch.save(model.state_dict(), MODEL_PATH)
         log.info(f"  ✓ Best checkpoint saved (epoch {best_epoch}): {MODEL_PATH}")
 
 
 log.info("-" * 60)
-log.info(f"Training complete. Best epoch: {best_epoch}, Val Loss: {best_val_loss:.4f}")
+log.info(f"Training complete. Best epoch: {best_epoch}, Val Loss: {best_val_loss:.4f}, Val Acc: {best_val_accuracy:.4f}")
 
 
 # =========================
@@ -348,7 +365,7 @@ with torch.no_grad():
 
 
 # =========================
-# CLASSIFICATION REPORT
+# CLASSIFICATION REPORT & METRICS
 # =========================
 
 report_str = classification_report(
@@ -357,16 +374,31 @@ report_str = classification_report(
     target_names=classes,
     zero_division=0
 )
+report_dict = classification_report(
+    all_labels,
+    all_predictions,
+    target_names=classes,
+    zero_division=0,
+    output_dict=True
+)
+
+test_accuracy = float(report_dict["accuracy"])
+macro_f1      = float(report_dict["macro avg"]["f1-score"])
+weighted_f1   = float(report_dict["weighted avg"]["f1-score"])
 
 log.info("\n" + "=" * 40)
-log.info("RAILGUARD BASELINE RESULTS")
+log.info(f"RAILGUARD {EXPERIMENT.upper()} RESULTS")
 log.info("=" * 40)
 log.info("\n" + report_str)
+log.info(f"Test Accuracy : {test_accuracy:.4f}")
+log.info(f"Macro F1      : {macro_f1:.4f}")
+log.info(f"Weighted F1   : {weighted_f1:.4f}")
 
 report_path = run_dir / "classification_report.txt"
 report_path.write_text(
     f"RailGuard — {EXPERIMENT} | Run: {run_id}\n"
-    f"Evaluated: {datetime.now().isoformat(timespec='seconds')}\n\n"
+    f"Evaluated: {datetime.now().isoformat(timespec='seconds')}\n"
+    f"Test Accuracy: {test_accuracy:.4f} | Macro F1: {macro_f1:.4f} | Weighted F1: {weighted_f1:.4f}\n\n"
     + report_str,
     encoding="utf-8"
 )
@@ -415,8 +447,39 @@ finalise_model_info(
     training_epochs=EPOCHS,
     best_epoch=best_epoch,
     checkpoint_path=MODEL_PATH,
+    best_val_loss=best_val_loss,
+    best_val_accuracy=best_val_accuracy,
+    test_accuracy=test_accuracy,
+    macro_f1=macro_f1,
+    weighted_f1=weighted_f1,
 )
 log.info(f"Model info saved: {run_dir / 'model_info.json'}")
+
+
+# =========================
+# EXPERIMENT REGISTRY
+# =========================
+
+rel_checkpoint = str(MODEL_PATH.relative_to(ROOT)).replace("\\", "/")
+record_experiment_in_registry(
+    run_id=run_id,
+    experiment=EXPERIMENT,
+    date=datetime.now().strftime("%Y-%m-%d"),
+    model="ResNet18",
+    dataset=cfg["dataset"].get("name", DATA_DIR.name),
+    train_images=len(train_data),
+    validation_images=len(val_data),
+    test_images=len(test_data),
+    epochs=EPOCHS,
+    best_epoch=best_epoch,
+    test_accuracy=test_accuracy,
+    macro_f1=macro_f1,
+    checkpoint=rel_checkpoint,
+    status="completed",
+    notes=f"Experiment: {EXPERIMENT}. Run: {run_id}. Weighted F1: {weighted_f1:.4f}.",
+    root=ROOT,
+)
+log.info(f"Experiment registry updated: {ROOT / 'research' / 'experiments' / 'experiment_registry.csv'}")
 
 log.info("=" * 60)
 log.info(f"Run complete: {run_dir}")
