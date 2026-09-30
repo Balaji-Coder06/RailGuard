@@ -1,0 +1,98 @@
+RailGuard — Mendeley Detection Dataset Audit Summary
+=====================================================
+Audit Date: 2026-09-29
+Dataset: Mendeley Data Rail Defects Detection (YOLOv8 format)
+Dataset Root: data/raw/mendeley/rail_defects/
+Absolute Path: E:\My_Projects\Github Files\Ongoing\RailGuard\data\raw\mendeley\rail_defects
+
+1. FILE INVENTORY & SPLIT INTEGRITY
+-----------------------------------
+Total Images on Disk: 7,697
+Total Label Files on Disk: 7,617
+Unique Base Images: 7,587
+Unique Base Labels: 7,587
+
+Split Breakdown:
+- train:
+    Images: 6,781 (6,681 base + 100 duplicate *(1).jpg)
+    Labels: 6,691 (6,681 base + 10 duplicate *(1).txt)
+    Empty Labels: 25
+    Unpaired Images: 100 (all are *(1).jpg duplicates)
+    Unpaired Labels: 10 (all are *(1).txt duplicates)
+- valid:
+    Images: 606 (606 base + 0 duplicate)
+    Labels: 616 (606 base + 10 duplicate *(1).txt)
+    Empty Labels: 6
+    Unpaired Images: 0
+    Unpaired Labels: 10 (all are *(1).txt duplicates)
+- test:
+    Images: 310 (300 base + 10 duplicate *(1).jpg)
+    Labels: 310 (300 base + 10 duplicate *(1).txt)
+    Empty Labels: 3
+    Unpaired Images: 10 (all are *(1).jpg duplicates)
+    Unpaired Labels: 10 (all are *(1).txt duplicates)
+
+Duplicate File Artifacts:
+- Total duplicate images (*(1).jpg): 110 (100 train, 0 valid, 10 test)
+- Total duplicate labels (*(1).txt): 30 (10 train, 10 valid, 10 test)
+- Note: Every base image corresponding to a duplicate file exists on disk and has a valid label file. Zero genuine base images are missing annotations.
+
+2. OBJECT & BOUNDING BOX STATISTICS
+-----------------------------------
+Total Bounding Boxes: 35,710 (Historical expected value confirmed: 35,710)
+Boxes in Base Labels: 35,549
+Boxes in Duplicate *(1).txt Labels: 161
+
+Boxes per Image Distribution:
+- Minimum: 0 (in empty/negative background files)
+- Maximum: 39 boxes in a single image
+- Mean (across all 7,617 label files): 4.69 boxes/file
+- Mean (across all 7,697 image files): 4.64 boxes/file
+- Mean (across 7,583 non-empty label files): 4.71 boxes/file
+- Median: 4 boxes/file
+
+Empty / Background Labels:
+- Total: 34 files (0.45% of label files)
+- Train: 25 | Valid: 6 | Test: 3
+- YOLO Standard: Functions properly as true-negative background images.
+
+3. CLASS TAXONOMY & EVIDENCE STATUS
+-----------------------------------
+Number of Classes: 10 (Class IDs: 0 to 9)
+Class Name Evidence Search:
+- Exhaustive search conducted across local repository:
+  * configs/ (*.yaml): Only 8-class classification configs present (Cracks, Flakings, etc.)
+  * data/ (*.md, *.yaml): No detection YAML or class map file present
+  * docs/ (*): Empty documentation subdirectories
+  * research/ (*.md, class_inspection/): Reports class_0.jpg through class_9.jpg labeled as 'CLASS 0'..'CLASS 9'
+  * dataset directory: No data.yaml, classes.txt, or notes.json accompanying raw files
+- Conclusion: Authoritative class names CANNOT be established from local repository evidence.
+  Class IDs 0–9 are unmapped integer categories in the local codebase.
+
+4. CLASS IMBALANCE & SPLIT LEAK CONCERNS
+----------------------------------------
+Class ID | Total Boxes | % Boxes | Unique Imgs | Imbalance Status
+Class 0  |         138 |   0.39% |          75 | Extreme Minority (CRITICAL ISSUE)
+Class 1  |       6,060 |  16.97% |       1,833 | Dominant
+Class 2  |       4,884 |  13.68% |       2,041 | Dominant
+Class 3  |       4,799 |  13.44% |       1,834 | Dominant
+Class 4  |         396 |   1.11% |         315 | Severe Minority
+Class 5  |         510 |   1.43% |         379 | Severe Minority
+Class 6  |       6,246 |  17.49% |       2,346 | Max Dominant
+Class 7  |       4,951 |  13.86% |       2,509 | Dominant
+Class 8  |       3,668 |  10.27% |       2,419 | Moderate
+Class 9  |       4,058 |  11.36% |       2,757 | Moderate
+
+Key Deficiencies:
+1. Class 0 Representation: Class 0 has 138 boxes across 75 images in 'train', but EXACTLY 0 boxes in 'valid' and 0 boxes in 'test'. Any validation or benchmark on the raw split will fail to evaluate Class 0.
+2. Max Imbalance Ratio: Class 6 (6,246 boxes) vs Class 0 (138 boxes) represents a 45.26:1 ratio.
+3. Class 4 & 5 Sparsity in Evaluation: Class 4 has only 22 valid / 11 test boxes; Class 5 has only 22 valid / 8 test boxes.
+
+5. DATASET SUITABILITY VERDICT
+------------------------------
+Status: NOT SUITABLE AS-IS FOR PRODUCTION TRAINING
+
+Prerequisites for Object Detection:
+1. Upstream Class Resolution: Obtain authoritative class name mappings from original Mendeley source metadata or publication.
+2. Deduplication Cleaning: Exclude the 110 *(1).jpg duplicate images and 30 *(1).txt duplicate annotations.
+3. Stratified Re-Split: Perform multilabel stratified re-split (train/val/test) to ensure all 10 classes (especially Class 0, 4, 5) are adequately represented across train, validation, and test partitions.

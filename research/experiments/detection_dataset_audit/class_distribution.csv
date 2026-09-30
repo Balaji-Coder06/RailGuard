@@ -1,0 +1,11 @@
+class_id,class_name,total_boxes,box_percentage,total_images,image_percentage,train_boxes,train_images,valid_boxes,valid_images,test_boxes,test_images
+0,Unmapped (Class 0),138,0.39,75,0.98,138,75,0,0,0,0
+1,Unmapped (Class 1),6060,16.97,1833,24.06,5241,1578,509,160,310,95
+2,Unmapped (Class 2),4884,13.68,2041,26.80,4199,1781,434,172,251,88
+3,Unmapped (Class 3),4799,13.44,1834,24.08,4231,1600,398,158,170,76
+4,Unmapped (Class 4),396,1.11,315,4.14,363,288,22,19,11,8
+5,Unmapped (Class 5),510,1.43,379,4.98,480,357,22,15,8,7
+6,Unmapped (Class 6),6246,17.49,2346,30.80,5501,2069,477,185,268,92
+7,Unmapped (Class 7),4951,13.86,2509,32.94,4341,2199,417,215,193,95
+8,Unmapped (Class 8),3668,10.27,2419,31.76,3208,2115,312,202,148,102
+9,Unmapped (Class 9),4058,11.36,2757,36.20,3561,2427,301,209,196,121
