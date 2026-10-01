@@ -1,5 +1,0 @@
-run_id,experiment,date,model,dataset,train_images,validation_images,test_images,epochs,best_epoch,test_accuracy,macro_f1,checkpoint,status,notes
-legacy-baseline-001,baseline,2026-09-27,ResNet18,railway_defects_8class,3884,830,839,15,unknown,unknown,unknown,models/checkpoints/railguard_resnet18_real_baseline.pth,completed,Trained before run-management system. Exact epoch/accuracy unknown — classification report not logged. Confusion matrix: research/results/confusion_matrices/baseline_confusion_matrix.png
-legacy-augmented-001,classical_augmentation,2026-09-28,ResNet18,railway_defects_8class_classical_augmented,4553,830,839,15,unknown,unknown,unknown,models/checkpoints/railguard_resnet18_classical_augmented.pth,completed,Trained before run-management system. Exact epoch/accuracy unknown — metrics not logged.
-,generated_data,,,,,,,,,,,,,planned
-2026-09-29_001,classical_augmentation,2026-09-29,ResNet18,railway_defects_8class_classical_augmented,4553,830,839,15,14,0.9678,0.9497,models/checkpoints/railguard_resnet18_classical_augmented.pth,completed,Experiment: classical_augmentation. Run: 2026-09-29_001. Weighted F1: 0.9677.
