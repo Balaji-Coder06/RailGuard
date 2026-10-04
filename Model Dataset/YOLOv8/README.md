@@ -1,0 +1,597 @@
+# YOLOv8 Railway Defect Detection
+
+## RailGuard
+
+**Project:** AI-Based Railway Track Fault Detection, Localization, Severity Assessment and Real-Time Monitoring System
+
+**Model:** YOLOv8  
+**Task:** Binary Railway Defect Object Detection
+
+---
+
+## 1. Overview
+
+This directory contains the complete YOLOv8 experiment developed for the **RailGuard** project.
+
+The objective of this experiment is to detect railway track defects from images using an object detection model.
+
+Unlike image classification, the model predicts:
+
+- Whether a railway defect is present
+- The location of the detected defect using a bounding box
+- The confidence score of the detection
+
+For this experiment, the original multi-class railway defect annotations were converted into a **single binary object-detection class**:
+
+```text
+0: defect
+```
+
+Therefore, the current YOLOv8 model answers:
+
+> **Where is a railway defect?**
+
+It does not currently determine:
+
+> **What specific type of defect is present?**
+
+The current YOLOv8 experiment also does not provide GPS coordinates, track chainage, or scientifically validated severity assessment.
+
+---
+
+## 2. Dataset
+
+### 2.1 Dataset Source
+
+The experiment uses the **Rail Defects Detection Dataset** published on Mendeley Data.
+
+**Dataset:** Railway Defects Detection Dataset  
+**Version:** 2
+
+Source: https://data.mendeley.com/datasets/88sh5y3tmj/2
+
+The original dataset contains multiple railway defect categories with YOLO-format annotations.
+
+### 2.2 Dataset Format
+
+The dataset uses the YOLO object-detection annotation format:
+
+```text
+class_id x_center y_center width height
+```
+
+The bounding-box coordinates are normalized relative to the image dimensions.
+
+### 2.3 Original Dataset Classes
+
+The original annotations contain multiple defect classes with class IDs:
+
+```text
+0, 1, 2, 3, 4, 5, 6, 7, 8, 9
+```
+
+For this YOLOv8 experiment, these classes were converted into a single binary detection class.
+
+---
+
+## 3. Dataset Preparation
+
+The objective of the current experiment is **binary railway defect detection**.
+
+All original railway-defect classes were mapped to:
+
+```text
+0: defect
+```
+
+The original bounding-box coordinates were preserved.
+
+For example:
+
+```text
+Original:
+3 0.421 0.512 0.125 0.180
+
+Binary:
+0 0.421 0.512 0.125 0.180
+```
+
+Only the class ID was changed.
+
+No synthetic images, synthetic annotations, or artificially generated training data were used.
+
+---
+
+## 4. Dataset Split
+
+The binary dataset used for YOLOv8 training and evaluation contains:
+
+| Split | Images | Label Files |
+|---|---:|---:|
+| Train | 6781 | 6656 |
+| Validation | 606 | 600 |
+| Test | 310 | 297 |
+
+Some images contain no annotations and are therefore treated as background images.
+
+The test set contains:
+
+- **310 images**
+- **1494 ground-truth objects** used in the final YOLOv8 test evaluation
+
+---
+
+## 5. Model
+
+### 5.1 Architecture
+
+The model used in this experiment is:
+
+```text
+YOLOv8
+```
+
+The model was initialized using pretrained YOLOv8 weights and fine-tuned on the binary railway-defect dataset.
+
+### 5.2 Detection Class
+
+The final model contains one detection class:
+
+| Class ID | Class |
+|---:|---|
+| 0 | defect |
+
+---
+
+## 6. Training Configuration
+
+| Parameter | Value |
+|---|---|
+| Model | YOLOv8n |
+| Pretrained Weights | yolov8n.pt |
+| Number of Classes | 1 |
+| Epochs | 50 |
+| Image Size | 640 × 640 |
+| Batch Size | 16 |
+| Optimizer | AdamW |
+| AMP | Enabled |
+| Random Seed | 0 |
+| Deterministic | True |
+| Workers | 8 |
+| Close Mosaic | 10 epochs |
+| Initial Learning Rate | 0.01 |
+| Final LR Factor | 0.01 |
+| Momentum | 0.937 |
+| Weight Decay | 0.0005 |
+| Warmup Epochs | 3 |
+| Hardware | NVIDIA Tesla T4 |
+| CUDA | 12.8 |
+| PyTorch | 2.11.0+cu128 |
+| Python | 3.13.15 |
+| Ultralytics | 8.4.172 |
+| Approx. Training Time | 0.689 hours |
+
+Training was performed using the binary railway-defect dataset.
+
+The epoch-level validation metrics are recorded in:
+
+```text
+training_log.csv
+```
+
+The log contains the recorded Precision, Recall, mAP@50 and mAP@50-95 values for all 50 epochs.
+
+---
+
+## 7. Training Artifacts
+
+The following training artifacts are included in this directory:
+
+```text
+model.ipynb
+training_log.csv
+YOLOv8_railway_defect_best.pt
+```
+
+The trained model weights are:
+
+```text
+YOLOv8_railway_defect_best.pt
+```
+
+Approximate model size:
+
+```text
+5.96 MB
+```
+
+---
+
+## 8. Validation Results
+
+The trained YOLOv8 model was evaluated on the validation split.
+
+| Metric | Result |
+|---|---:|
+| Images | 606 |
+| Instances | 2838 |
+| Precision | 0.429 |
+| Recall | 0.378 |
+| mAP@50 | 0.355 |
+| mAP@50-95 | 0.129 |
+
+The validation metrics correspond to the final recorded validation result from the 50-epoch training run.
+
+---
+
+## 9. Test Evaluation
+
+The trained YOLOv8 model was evaluated on the held-out test set.
+
+| Metric | Result |
+|---|---:|
+| Images | 310 |
+| Ground-Truth Objects | 1494 |
+| Precision | 0.4316 |
+| Recall | 0.4258 |
+| F1-score | 0.4287 |
+| mAP@50 | 0.3975 |
+| mAP@50-95 | 0.1372 |
+
+### F1-score
+
+The F1-score was calculated from the recorded precision and recall:
+
+```text
+F1 = 2 × Precision × Recall
+     --------------------------
+       Precision + Recall
+```
+
+Using:
+
+```text
+Precision = 0.4316
+Recall    = 0.4258
+```
+
+the resulting F1-score is:
+
+```text
+F1 = 0.4287
+```
+
+The complete test evaluation information is recorded in:
+
+```text
+evaluation_log.csv
+```
+
+---
+
+## 10. Evaluation Artifacts
+
+The repository contains the following evaluation artifacts:
+
+```text
+results/
+├── predictions/
+├── confusion_matrix.png
+├── confusion_matrix_normalized.png
+├── test_confusion_matrix.png
+├── results.csv
+└── results.png
+```
+
+The evaluation log is:
+
+```text
+evaluation_log.csv
+```
+
+---
+
+## 11. Confusion Matrices
+
+The YOLOv8 training and evaluation process generated confusion-matrix artifacts including:
+
+```text
+results/confusion_matrix.png
+results/confusion_matrix_normalized.png
+results/test_confusion_matrix.png
+```
+
+These provide visual summaries of model detection performance.
+
+---
+
+## 12. Test Predictions
+
+Predictions were generated for all 310 test images.
+
+The prediction labels were generated for the images where the model produced detections.
+
+Prediction outputs are stored under:
+
+```text
+results/predictions/
+```
+
+A separate collection of prediction outputs was also generated during the testing workflow.
+
+---
+
+## 13. Inference Performance
+
+During the final test prediction run:
+
+```text
+Images processed: 310
+Prediction labels: 273
+Total time: 3.72 seconds
+Average reported time/image: 12.00 ms
+```
+
+The separate test evaluation completed in:
+
+```text
+6.69 seconds
+```
+
+Inference speed can vary depending on the GPU, runtime environment, preprocessing, and hardware utilization.
+
+Therefore, these values should be treated as experimental observations rather than hardware-independent benchmarks.
+
+---
+
+## 14. False Positive and False Negative Analysis
+
+A dedicated error analysis was performed on the 310-image test set.
+
+The analysis produced:
+
+| Category | Count |
+|---|---:|
+| True Positives | 463 |
+| False Positives | 398 |
+| False Negatives | 1031 |
+
+The corresponding totals were:
+
+```text
+Ground-truth objects: 1494
+Predicted objects:     861
+```
+
+The generated error examples are organized as:
+
+```text
+error_examples/
+├── false_positives/
+└── false_negatives/
+```
+
+Representative examples were generated to identify cases where:
+
+- The model detects a defect without a matching ground-truth defect.
+- The model fails to detect a ground-truth defect.
+
+### Important Evaluation Note
+
+The FP/FN analysis is a **separate error-analysis procedure** and does not replace the official YOLOv8 evaluation metrics reported in the Test Evaluation section.
+
+The official test metrics were obtained using the YOLOv8/Ultralytics evaluation pipeline.
+
+The separate error analysis was used to investigate model behavior and identify representative failure cases.
+
+---
+
+## 15. Training Progress
+
+The recorded training run consisted of 50 epochs.
+
+The final recorded validation metrics at epoch 50 were:
+
+```text
+Precision = 0.430
+Recall    = 0.378
+mAP@50    = 0.351
+mAP@50-95 = 0.128
+```
+
+The highest recorded mAP@50 during the training output was:
+
+```text
+0.354
+```
+
+at epoch 47.
+
+The complete epoch-by-epoch values are available in:
+
+```text
+training_log.csv
+```
+
+---
+
+## 16. Reproducibility
+
+The following information is recorded to support reproducibility.
+
+### Dataset
+
+```text
+Mendeley Railway Defects Detection Dataset
+Version 2
+```
+
+### Task
+
+```text
+Binary object detection
+```
+
+### Model
+
+```text
+YOLOv8
+```
+
+### Training
+
+```text
+Epochs:       50
+Image size:   640
+Pretrained:   True
+Deterministic: True
+```
+
+### Environment
+
+```text
+Ultralytics:  8.4.172
+PyTorch:      2.11.0+cu128
+Python:       3.13.15
+GPU:          NVIDIA Tesla T4
+```
+
+### Training Time
+
+```text
+Approximately 0.689 hours
+```
+
+The training and testing notebooks are included in this directory to document the experimental workflow.
+
+---
+
+## 17. Repository Contents
+
+The final YOLOv8 directory is organized as:
+
+```text
+YOLOv8/
+├── results/
+│   ├── predictions/
+│   ├── confusion_matrix.png
+│   ├── confusion_matrix_normalized.png
+│   ├── test_confusion_matrix.png
+│   ├── results.csv
+│   └── results.png
+├── model.ipynb
+├── testing.ipynb
+├── training_log.csv
+├── evaluation_log.csv
+├── YOLOv8_railway_defect_best.pt
+└── README.md
+```
+
+The error-analysis artifacts can additionally be organized under:
+
+```text
+results/
+├── false_positives/
+├── false_negatives/
+└── error_analysis.csv
+```
+
+---
+
+## 18. Current Capabilities
+
+The current YOLOv8 experiment supports:
+
+- Railway defect detection
+- Binary defect identification
+- Bounding-box localization
+- Confidence-score output
+- Test-set evaluation
+- False-positive analysis
+- False-negative analysis
+
+---
+
+## 19. Current Limitations
+
+The current YOLOv8 binary detector does **not** provide:
+
+- Specific defect-type classification
+- GPS coordinates
+- Track chainage
+- Scientifically validated severity assessment
+
+These capabilities should not be claimed based on the current YOLOv8 experiment.
+
+---
+
+## 20. Research Scope
+
+The YOLOv8 experiment establishes a binary railway-defect detection baseline for the RailGuard project.
+
+The model is one of the architectures being evaluated as part of the RailGuard model comparison.
+
+Planned model comparison:
+
+```text
+YOLO11
+YOLOv8
+RF-DETR
+```
+
+The comparison will consider:
+
+- Precision
+- Recall
+- F1-score
+- mAP@50
+- mAP@50-95
+- Inference speed
+- False positives
+- False negatives
+
+An independent railway-defect dataset may also be used in a later experiment to evaluate cross-dataset generalization.
+
+---
+
+## 21. Research Integrity
+
+All reported results in this directory correspond to experiments performed using the referenced railway-defect dataset.
+
+No synthetic training data was used.
+
+No GPS or location information is invented or inferred from the dataset.
+
+The training log contains the recorded epoch metrics from the original YOLOv8 training output.
+
+The current results support claims about:
+
+**binary railway-defect detection and bounding-box localization only.**
+
+---
+
+## 22. Summary
+
+The YOLOv8 experiment provides a reproducible binary railway-defect detection baseline for RailGuard.
+
+### Final Test Performance
+
+| Metric | Result |
+|---|---:|
+| Precision | 0.4316 |
+| Recall | 0.4258 |
+| F1-score | 0.4287 |
+| mAP@50 | 0.3975 |
+| mAP@50-95 | 0.1372 |
+| Test Images | 310 |
+| Ground-Truth Objects | 1494 |
+
+### Error Analysis
+
+| Metric | Count |
+|---|---:|
+| True Positives | 463 |
+| False Positives | 398 |
+| False Negatives | 1031 |
+
+The trained YOLOv8 model, notebooks, training log, evaluation log, evaluation results, confusion matrices, prediction artifacts, and error-analysis examples are maintained in this directory.
