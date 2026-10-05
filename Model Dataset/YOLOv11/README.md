@@ -1,534 +1,362 @@
-# YOLO11 Railway Defect Detection
+# RailGuard — YOLO11 Railway Defect Detection
 
-## RailGuard
+> Part of **RailGuard**: *AI-Based Railway Track Fault Detection, Localization, Severity Assessment and Real-Time Monitoring System*
 
-**Project:** AI-Based Railway Track Fault Detection, Localization, Severity Assessment and Real-Time Monitoring System
-
-**Model:** YOLO11n  
-**Task:** Binary Railway Defect Object Detection
+| | |
+|---|---|
+| **Model** | YOLO11n (Ultralytics) |
+| **Task** | Binary railway-defect object detection (1 class: `defect`) |
+| **Weights** | `YOLO11_railway_defect_best.pt` (5.22 MiB) |
+| **Ultralytics** | 8.4.172 |
+| **Dataset** | Railway Track Surface Faults Dataset v2 (Mendeley Data), converted to a single `defect` class |
 
 ---
 
 ## 1. Overview
 
-This directory contains the complete YOLO11 experiment developed for the **RailGuard** project.
+This folder contains the complete YOLO11 experiment for RailGuard: dataset conversion, training, validation, test evaluation, prediction outputs and false-positive / false-negative analysis.
 
-The objective of this experiment is to detect railway track defects from images using an object detection model.
+The model is an object detector. For each image it predicts:
 
-Unlike image classification, the model predicts:
+- whether a railway defect is present,
+- where it is (bounding box),
+- how confident it is (confidence score).
 
-- Whether a railway defect is present
-- The location of the detected defect using a bounding box
-- The confidence score of the detection
+The original multi-class annotations were collapsed into one class, so the model answers **"Where is a railway defect?"** It does **not** answer **"What type of defect is it?"**, and it does not provide GPS coordinates, track chainage or a validated severity assessment.
 
-For this experiment, the original multi-class railway defect annotations were converted into a **single binary object-detection class**:
+## 2. Results at a Glance
 
-```text
-0: defect
-```
+Held-out test set: **310 images, 1,494 ground-truth objects**.
 
-Therefore, the current YOLO11 model answers:
+| Precision | Recall | F1-score | mAP@50 | mAP@50-95 |
+|---:|---:|---:|---:|---:|
+| 0.477 | 0.406 | 0.439 | 0.400 | 0.144 |
 
-> **Where is a railway defect?**
+Training time: 0.84 h on a Tesla T4 · Model size: 5.22 MiB · Parameters: 2,582,347 (fused).
 
-It does not currently determine:
-
-> **What specific type of defect is present?**
-
-The current YOLO11 experiment also does not provide GPS coordinates, track chainage, or scientifically validated severity assessment.
+![Training curves](results/results.png)
 
 ---
 
-## 2. Dataset
+## 3. Dataset
 
-### 2.1 Dataset Source
+### 3.1 Source
 
-The experiment uses the **Rail Defects Detection Dataset** published on Mendeley Data.
+**Railway Track Surface Faults Dataset**, Version 2, published 6 January 2022 on Mendeley Data.
 
-**Dataset:** Railway Defects Detection Dataset  
-**Version:** 2
+- DOI: [10.17632/8hxtgyyxrw.2](https://data.mendeley.com/datasets/8hxtgyyxrw/2)
+- Contributors: Asfar Arain, Sanaullah Mehran, Muhammad Zakir Shaikh, Dileep Kumar, Tanweer Hussain, Bhawani Shankar Chowdhry
+- Institution: Mehran University of Engineering and Technology (NCRA Condition Monitoring Systems Lab), Jamshoro, Pakistan
+- Data article: <https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10828558/>
 
-Source: <https://data.mendeley.com/datasets/88sh5y3tmj/2>
+**Acquisition.** Video was recorded at 120 FPS by two EKEN-H9R cameras mounted on both sides of a railway inspection vehicle (Pakistan Railway, Kotri Junction). Unnecessary video was removed, frames were extracted, and the frames were labelled manually. The dataset page lists these defect types: Grooves, Joints, Cracks, Flakings, Shellings, Spallings and Squats.
 
-The original dataset contains multiple railway defect categories with YOLO-format annotations.
+**Working copy.** The experiment used a YOLOv8-format export of this data (`rail defects detection.v18i.yolov8`) stored as a Kaggle dataset, already divided into `train`, `valid` and `test` splits. The exported labels contain class IDs `0`–`9`.
 
-### 2.2 Dataset Format
+### 3.2 Annotation Format
 
-The dataset uses the YOLO object-detection annotation format:
+YOLO detection format, one object per line, coordinates normalised to the image size:
 
 ```text
 class_id x_center y_center width height
 ```
 
-The bounding-box coordinates are normalized relative to the image dimensions.
+### 3.3 Binary Conversion
 
-### 2.3 Original Dataset Classes
-
-The original annotations contain multiple defect classes with class IDs:
+Every original class ID was mapped to a single class. Only the class ID changes; the box coordinates are untouched.
 
 ```text
-0, 1, 2, 3, 4, 5, 6, 7, 8, 9
+Original:  3 0.421 0.512 0.125 0.180
+Binary:    0 0.421 0.512 0.125 0.180
 ```
 
-For this YOLO11 experiment, these classes were converted into a single binary detection class.
+Label files left with no valid lines are not written, so those images are treated by Ultralytics as **background images** (no objects). The conversion only remaps labels; no synthetic images or synthetic annotations were generated.
 
----
+`data.yaml` used for training:
 
-## 3. Dataset Preparation
+```yaml
+path: /kaggle/working/railway_defect_binary
+train: train/images
+val: valid/images
+test: test/images
 
-The objective of the current experiment is **binary railway defect detection**.
-
-All original railway-defect classes were mapped to:
-
-```text
-0: defect
+nc: 1
+names:
+  0: defect
 ```
 
-The original bounding-box coordinates were preserved.
+### 3.4 Splits
 
-For example:
-
-```text
-Original:
-3 0.421 0.512 0.125 0.180
-
-Binary:
-0 0.421 0.512 0.125 0.180
-```
-
-Only the class ID was changed.
-
-No synthetic images, synthetic annotations, or artificially generated training data were used.
-
----
-
-## 4. Dataset Split
-
-The binary dataset used for YOLO11 training and evaluation contains:
-
-| Split | Images | Label Files |
+| Split | Images | Label files |
 |---|---:|---:|
-| Train | 6781 | 6656 |
+| Train | 6,781 | 6,656 |
 | Validation | 606 | 600 |
 | Test | 310 | 297 |
 
-Some images contain no annotations and are therefore treated as background images.
-
-The original test split contains:
-
-- **310 images**
-- **1555 annotated objects**
-- **3 empty annotation files**
-
-The final binary test set used for error analysis contains all 310 test images and preserves the original bounding-box coordinates.
+Images without a label file are background images. In the test set, **13 of the 310 images contain no annotated objects**, and all 310 test images are used for evaluation and error analysis.
 
 ---
 
-## 5. Model
+## 4. Model
 
-### 5.1 Architecture
-
-The model used in this experiment is:
-
-```text
-YOLO11n
-```
-
-The model was initialized using the pretrained:
-
-```text
-yolo11n.pt
-```
-
-and fine-tuned on the binary railway-defect dataset.
-
-### 5.2 Detection Class
-
-The final model contains one detection class:
-
-| Class ID | Class |
-|---:|---|
-| 0 | defect |
+| Item | Value |
+|---|---|
+| Architecture | YOLO11n |
+| Pretrained weights | `yolo11n.pt` (Ultralytics) |
+| Task | Object detection |
+| Classes | 1 — `{0: defect}` |
+| Parameters (training model) | 2,590,035 |
+| Parameters (fused, inference) | 2,582,347 |
+| Weights file | `YOLO11_railway_defect_best.pt` — 5,472,858 bytes (5.22 MiB) |
 
 ---
 
-## 6. Training Configuration
+## 5. Training Configuration
+
+Values below are read from the training arguments stored inside `YOLO11_railway_defect_best.pt`.
 
 | Parameter | Value |
 |---|---|
-| Model | YOLO11n |
-| Pretrained Weights | yolo11n.pt |
-| Number of Classes | 1 |
-| Epochs | 50 |
-| Image Size | 640 × 640 |
-| Batch Size | 16 |
-| Optimizer | AdamW |
+| Epochs | 50 (all completed) |
+| Early-stopping patience | 10 (not triggered) |
+| Image size | 640 × 640 |
+| Batch size | 16 |
+| Optimizer | AdamW (chosen automatically by Ultralytics; not set explicitly in the notebook) |
+| Initial learning rate (`lr0`) | 0.002 (set by the automatic optimizer choice) |
+| Final LR factor (`lrf`) | 0.01 |
+| Weight decay | 0.0005 |
+| Warmup epochs | 3 |
+| Mosaic | 1.0 |
+| Mixup | 0.0 |
+| Close mosaic | last 10 epochs |
 | AMP | Enabled |
-| Random Seed | 0 |
-| Hardware | NVIDIA Tesla T4 |
-| CUDA | 12.8 |
-| Ultralytics | 8.4.172 |
-| Approx. Training Time | 0.84 hours |
+| Seed | 0 |
+| Deterministic | True |
+| Pretrained | True |
+| Workers | 2 |
+| Device | GPU 0 |
 
-Training was performed using the binary railway-defect dataset.
+Hardware and software:
+
+```text
+GPU:         NVIDIA Tesla T4
+CUDA:        12.8
+Ultralytics: 8.4.172
+```
+
+Training time: **0.84 hours** (3,021.55 s, from `results/results.csv`).
+
+Equivalent training call:
+
+```python
+from ultralytics import YOLO
+
+model = YOLO("yolo11n.pt")
+model.train(
+    data="data.yaml",
+    epochs=50, imgsz=640, batch=16,
+    patience=10, pretrained=True,
+    seed=0, deterministic=True,
+    workers=2, device=0,
+)
+```
 
 ---
 
-## 7. Training Artifacts
+## 6. Validation Results
 
-The following training artifacts are included in this directory:
+`best.pt` was selected by Ultralytics at **epoch 46** (highest mAP@50-95, 0.14513). Validation split: 606 images, 2,838 instances.
 
-```text
-model.ipynb
-training_log.csv
-YOLO11_railway_defect_best.pt
-```
+| Metric | `best.pt` re-validated | Epoch 46 (best) | Epoch 50 (final) |
+|---|---:|---:|---:|
+| Precision | 0.444 | 0.447 | 0.441 |
+| Recall | 0.416 | 0.417 | 0.426 |
+| mAP@50 | 0.389 | 0.390 | 0.387 |
+| mAP@50-95 | 0.145 | 0.145 | 0.144 |
 
-The trained model weights are:
+The re-validated column is the `validation` row of `evaluation_log.csv`; the epoch columns come from `training_log.csv`. The highest mAP@50 recorded during training was 0.391, at epoch 47.
 
-```text
-YOLO11_railway_defect_best.pt
-```
+Final-epoch losses (`training_log.csv`):
 
-Approximate model size:
-
-```text
-5.22 MB
-```
+| | Box | Cls | DFL |
+|---|---:|---:|---:|
+| Train | 1.898 | 1.634 | 1.533 |
+| Validation | 2.178 | 1.833 | 1.640 |
 
 ---
 
-## 8. Validation Results
+## 7. Test Results
 
-The best YOLO11 model was evaluated on the validation split.
-
-| Metric | Result |
-|---|---:|
-| Images | 606 |
-| Instances | 2838 |
-| Precision | 0.444 |
-| Recall | 0.416 |
-| mAP@50 | 0.389 |
-| mAP@50-95 | 0.145 |
-
----
-
-## 9. Test Evaluation
-
-The trained model was evaluated on the held-out test set.
+Evaluated with the Ultralytics pipeline (`split="test"`, `imgsz=640`, `batch=16`).
 
 | Metric | Result |
 |---|---:|
 | Images | 310 |
-| Instances | 1494 |
+| Ground-truth objects | 1,494 |
 | Precision | 0.477 |
 | Recall | 0.406 |
 | F1-score | 0.439 |
 | mAP@50 | 0.400 |
 | mAP@50-95 | 0.144 |
 
-### F1-score
-
-The F1-score was calculated from the recorded precision and recall:
+F1 is computed from the recorded precision and recall:
 
 ```text
-F1 = 2 × Precision × Recall
-     --------------------------
-       Precision + Recall
+F1 = 2 × P × R / (P + R) = 2 × 0.477 × 0.406 / (0.477 + 0.406) = 0.439
 ```
 
-Using:
+Ultralytics reports precision and recall at the confidence threshold that maximises F1. The metrics are stored to three decimals in `evaluation_log.csv` (rows `validation` and `test`).
 
-```text
-Precision = 0.477
-Recall    = 0.406
-```
-
-the resulting F1-score is approximately:
-
-```text
-F1 = 0.439
-```
+![Test confusion matrix](results/test_confusion_matrix.png)
 
 ---
 
-## 10. Evaluation Artifacts
+## 8. False-Positive / False-Negative Analysis
 
-The repository contains the following evaluation artifacts:
+A separate, per-image error analysis was run on all 310 test images.
 
-```text
-results/
-├── predictions/
-├── confusion_matrix.png
-├── test_confusion_matrix.png
-├── results.csv
-└── results.png
-```
-
-The evaluation log is:
-
-```text
-evaluation_log.csv
-```
-
----
-
-## 11. Confusion Matrices
-
-Two confusion-matrix artifacts are included:
-
-```text
-results/confusion_matrix.png
-results/test_confusion_matrix.png
-```
-
-These provide visual summaries of model detection performance.
-
----
-
-## 12. Test Predictions
-
-Predictions were generated for all 310 test images.
-
-Representative prediction images are stored under:
-
-```text
-results/predictions/
-```
-
-A separate prediction run was also performed using a confidence threshold of:
-
-```text
-0.50
-```
-
----
-
-## 13. Inference Performance
-
-During testing, inference was approximately:
-
-```text
-~10 ms/image
-```
-
-The actual inference speed can vary depending on the GPU, runtime environment, preprocessing, and hardware utilization.
-
-Therefore, this value should be treated as an approximate experimental observation rather than a hardware-independent benchmark.
-
----
-
-## 14. False Positive and False Negative Analysis
-
-A dedicated error analysis was performed on the 310-image test set.
-
-The analysis used:
-
-```text
-Confidence threshold: 0.25
-IoU matching threshold: 0.50
-```
-
-The object-level results were:
+- Predictions generated with `conf = 0.25`
+- Predicted and ground-truth boxes matched by IoU ≥ 0.50 (each ground-truth box can be matched once)
+- Unmatched predictions are false positives; unmatched ground-truth boxes are false negatives
 
 | Category | Count |
 |---|---:|
-| True Positives | 520 |
-| False Positives | 485 |
-| False Negatives | 974 |
+| Ground-truth objects | 1,494 |
+| Predicted objects | 1,005 |
+| True positives | 520 |
+| False positives | 485 |
+| False negatives | 974 |
 
-The complete analysis is stored in:
+At this fixed threshold the detector's precision is 520 / 1,005 = 0.517 and its recall is 520 / 1,494 = 0.348.
 
-```text
-error_analysis.csv
-```
+> **Important.** This analysis uses its own fixed confidence threshold and greedy matching, so its counts are not meant to reproduce the Ultralytics precision/recall in Section 7. The official metrics are the ones in Section 7; this analysis is for understanding failure cases.
 
-Representative false-positive and false-negative examples were also generated.
+Image-level breakdown (310 images):
 
-These examples identify cases where:
-
-- The model detects a defect without a matching ground-truth defect.
-- The model fails to detect a ground-truth defect.
-
-### Important Evaluation Note
-
-The FP/FN analysis is a **separate error-analysis procedure** and does not replace the official Ultralytics evaluation metrics reported in the Test Evaluation section.
-
-The official test metrics were obtained using the Ultralytics evaluation pipeline.
-
-The separate error analysis used:
-
-```text
-Confidence threshold = 0.25
-IoU threshold = 0.50
-```
-
-This distinction is maintained to avoid mixing results produced by different evaluation procedures.
-
----
-
-## 15. Reproducibility
-
-The following information is recorded to support reproducibility.
-
-### Dataset
-
-```text
-Mendeley Railway Defects Detection Dataset
-Version 2
-```
-
-### Task
-
-```text
-Binary object detection
-```
-
-### Model
-
-```text
-YOLO11n
-```
-
-### Training
-
-```text
-Epochs:       50
-Image size:   640
-Batch size:   16
-Optimizer:    AdamW
-AMP:          Enabled
-Seed:         0
-```
-
-### Environment
-
-```text
-Ultralytics:  8.4.172
-GPU:          NVIDIA Tesla T4
-CUDA:         12.8
-```
-
-### Training Time
-
-```text
-Approximately 0.84 hours
-```
-
-The training and testing notebooks are included in this directory to document the experimental workflow.
-
----
-
-## 16. Repository Contents
-
-```text
-YOLO11/
-├── results/
-│   ├── predictions/
-│   ├── confusion_matrix.png
-│   ├── test_confusion_matrix.png
-│   ├── results.csv
-│   └── results.png
-├── model.ipynb
-├── testing.ipynb
-├── training_log.csv
-├── evaluation_log.csv
-├── YOLO11_railway_defect_best.pt
-└── README.md
-```
-
-The final error-analysis artifacts can additionally be organized as:
-
-```text
-results/
-├── false_positives/
-├── false_negatives/
-└── error_analysis.csv
-```
-
----
-
-## 17. Current Capabilities
-
-The current YOLO11 experiment supports:
-
-- Railway defect detection
-- Binary defect identification
-- Bounding-box localization
-- Confidence-score output
-- Test-set evaluation
-- False-positive analysis
-- False-negative analysis
-
----
-
-## 18. Current Limitations
-
-The current YOLO11 binary detector does **not** provide:
-
-- Specific defect-type classification
-- GPS coordinates
-- Track chainage
-- Scientifically validated severity assessment
-
-These capabilities should not be claimed based on the current YOLO11 experiment.
-
----
-
-## 19. Research Scope
-
-The YOLO11 experiment establishes a binary railway-defect detection baseline for the RailGuard project.
-
-Future experiments may compare the YOLO11 detector against other object-detection architectures using the same dataset and evaluation methodology.
-
-Planned model comparison:
-
-```text
-YOLO11
-YOLOv8
-RF-DETR
-```
-
-The comparison will consider:
-
-- Precision
-- Recall
-- F1-score
-- mAP@50
-- mAP@50-95
-- Inference speed
-- False positives
-- False negatives
-
-An independent railway-defect dataset may also be used in a later experiment to evaluate cross-dataset generalization.
-
----
-
-## 20. Research Integrity
-
-All reported results in this directory correspond to experiments performed using the referenced railway-defect dataset.
-
-No synthetic training data was used.
-
-No GPS or location information is invented or inferred from the dataset.
-
-The current results support claims about **binary railway-defect detection and bounding-box localization only**.
-
----
-
-## 21. Summary
-
-The YOLO11 experiment provides a reproducible binary railway-defect detection baseline for RailGuard.
-
-### Final Test Performance
-
-| Metric | Result |
+| Category | Images |
 |---|---:|
-| Precision | 0.477 |
-| Recall | 0.406 |
-| F1-score | 0.439 |
-| mAP@50 | 0.400 |
-| mAP@50-95 | 0.144 |
-| Approx. Inference Speed | ~10 ms/image |
+| False positives and false negatives | 172 |
+| False negatives only | 74 |
+| False positives only | 31 |
+| Correct detections only (no errors) | 30 |
+| No objects and no predictions | 3 |
 
-The trained model, notebooks, logs, evaluation results, confusion matrices, and prediction artifacts are maintained in this directory.
+Example images are saved in `results/false_positives/` and `results/false_negatives/` (10 each). Per-image counts are in `results/error_analysis.csv` with columns `image, ground_truth, predictions, TP, FP, FN, error_type`.
+
+---
+
+## 9. Test Predictions and Inference Speed
+
+Predictions were generated for all 310 test images at `conf = 0.25`; 281 of them contained at least one detection. A second prediction run used a higher threshold of `conf = 0.50`. `results/predictions/` holds 10 representative annotated test images (`prediction_01.jpg` … `prediction_10.jpg`).
+
+Inference speed was approximately **10 ms/image** during testing on a Tesla T4. This is an approximate observation (not stored in a log file) and varies with GPU, runtime and preprocessing; it is not a hardware-independent benchmark.
+
+---
+
+## 10. Repository Contents
+
+```text
+YOLOv11/
+├── results/
+│   ├── predictions/                    # 10 representative annotated test images
+│   ├── false_positives/                # 10 example images
+│   ├── false_negatives/                # 10 example images
+│   ├── error_analysis.csv              # per-image TP / FP / FN
+│   ├── results.csv                     # full per-epoch Ultralytics log
+│   ├── results.png                     # training curves
+│   ├── confusion_matrix.png            # validation split
+│   └── test_confusion_matrix.png       # test split
+├── model.ipynb                         # dataset conversion + training + validation
+├── testing.ipynb                       # test evaluation + prediction
+├── training_log.csv                    # full per-epoch log (losses, P, R, mAP, learning rate)
+├── evaluation_log.csv                  # validation and test metrics
+└── YOLO11_railway_defect_best.pt       # trained weights
+```
+
+---
+
+## 11. Quick Start
+
+```bash
+pip install ultralytics==8.4.172
+```
+
+```python
+from ultralytics import YOLO
+
+model = YOLO("YOLO11_railway_defect_best.pt")
+
+# Run detection on an image
+results = model.predict("track.jpg", imgsz=640, conf=0.25, save=True)
+
+for box in results[0].boxes:
+    print(box.xyxy.tolist(), float(box.conf))   # bounding box + confidence
+```
+
+To re-evaluate on your own copy of the binary dataset:
+
+```python
+model.val(data="data.yaml", split="test", imgsz=640, batch=16)
+```
+
+---
+
+## 12. Capabilities and Limitations
+
+**Supports:** railway defect detection, binary defect identification, bounding-box localisation, confidence scores, test-set evaluation, false-positive and false-negative analysis.
+
+**Does not provide:**
+
+- specific defect-type classification
+- GPS coordinates or track chainage
+- scientifically validated severity assessment
+
+**Caveats:**
+
+- Absolute performance is modest (mAP@50 = 0.40, recall = 0.41); this is a baseline, not a deployment-ready inspector.
+- Only one dataset was used, with no external or cross-dataset validation yet.
+- Images are frames from continuous inspection video. The splits were not verified to be video-disjoint, so near-identical frames may appear in different splits and results may be optimistic for unseen track.
+- Only the `n` (nano) model size was trained.
+
+---
+
+## 13. Model Comparison
+
+Test-set results for the three detectors trained in this repository (see `../comparison.ipynb`):
+
+| Model | Test images | Precision | Recall | F1 | mAP@50 | mAP@50-95 |
+|---|---:|---:|---:|---:|---:|---:|
+| **YOLO11n (this folder)** | 310 | 0.477 | 0.406 | 0.439 | 0.400 | 0.144 |
+| YOLOv8n | 310 | 0.432 | 0.426 | 0.429 | 0.398 | 0.137 |
+| YOLO26n | 300 | 0.434 | 0.376 | 0.403 | 0.375 | 0.136 |
+
+YOLO11n has the highest precision, F1, mAP@50 and mAP@50-95 of the three; YOLOv8n has the highest recall. YOLO26n was evaluated on a 300-image test split (the same 1,494 annotated objects, without 10 object-free images), so the comparison is close but not identical across all three. RF-DETR is planned as a later comparison and is not included in this repository yet.
+
+---
+
+## 14. Reproducibility
+
+```text
+Dataset:       Railway Track Surface Faults Dataset v2 → binary (1 class)
+Model:         YOLO11n, pretrained yolo11n.pt
+Epochs:        50      Image size: 640      Batch size: 16
+Optimizer:     AdamW (auto, lr0 = 0.002)    AMP: enabled
+Seed:          0       Deterministic: True  Workers: 2
+Ultralytics:   8.4.172 CUDA: 12.8           GPU: Tesla T4
+```
+
+The notebooks `model.ipynb` and `testing.ipynb` document the full workflow. Small run-to-run differences can still occur across hardware and library versions.
+
+---
+
+## 15. Research Integrity
+
+- All reported numbers come from experiments on the dataset referenced above.
+- No synthetic training data was generated by this pipeline.
+- No GPS or location information is invented or inferred from the data.
+- Claims supported by these results: **binary railway-defect detection and bounding-box localisation only.**
+
+## 16. Acknowledgements and License
+
+- Dataset: Arain et al., *Railway Track Surface Faults Dataset*, Mendeley Data, V2, doi:10.17632/8hxtgyyxrw.2 — please refer to the Mendeley page for its license and citation terms.
+- Training framework: [Ultralytics](https://docs.ultralytics.com) (AGPL-3.0). Weights trained with Ultralytics are subject to its license terms.
