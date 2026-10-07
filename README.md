@@ -219,6 +219,72 @@ All models were trained on an **NVIDIA Tesla T4 GPU** (CUDA 12.8, PyTorch 2.11.0
 
 ---
 
+## RailGuard Full-Stack Application
+
+**AI-Powered Railway Track Fault Detection and Monitoring System Using YOLO11**
+
+RailGuard includes a production-quality full-stack prototype that enables operators and engineers to upload railway track imagery, run YOLO11 inference, and visualize defects with high-precision bounding boxes in real time.
+
+### Architecture
+
+```text
+React Frontend (Vite)
+       ↓  multipart/form-data (image)
+REST API (/api/detect)
+       ↓
+FastAPI Backend
+       ↓  Inference (imgsz=640)
+YOLO11 Object Detector (best.pt)
+       ↓
+Detection Result (JSON + Annotated Imagery)
+```
+
+### Setup & Quickstart
+
+#### Backend Setup
+
+```bash
+cd backend
+pip install -r requirements.txt
+python -m uvicorn main:app --reload --host 127.0.0.1 --port 8000
+```
+
+The backend loads `backend/models/best.pt` once at startup, keeps the model in memory, automatically uses CUDA when available (with graceful CPU fallback), and exposes:
+- `GET  /api/health` — Service readiness & model status
+- `POST /api/detect` — Single-image YOLO11 inference
+- `GET  /api/result/{image_id}` — Annotated defect visualization fetch
+
+#### Frontend Setup
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The application will be accessible at:
+```text
+http://localhost:5173
+```
+
+### Environment Configuration
+
+#### Frontend (`frontend/.env`)
+```env
+VITE_API_URL=http://localhost:8000
+```
+
+#### Backend Configuration Options
+The backend can be configured via environment variables:
+| Variable | Default | Description |
+|---|---|---|
+| `MODEL_PATH` | `models/best.pt` | Path to trained YOLO11 checkpoint |
+| `CONFIDENCE_THRESHOLD` | `0.40` | Default confidence score cutoff |
+| `IMAGE_SIZE` | `640` | YOLO inference input size |
+| `CORS_ORIGINS` | `http://localhost:5173,http://127.0.0.1:5173` | Allowed CORS origins |
+
+---
+
 ## Installation
 
 This repository does not rely on complex external wrappers. It uses standard PyTorch and Ultralytics.
