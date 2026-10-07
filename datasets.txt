@@ -1,7 +1,0 @@
-Base dataset:
-    https://data.mendeley.com/datasets/8hxtgyyxrw/2
-
-Side use datasets:
-    https://universe.roboflow.com/ai-model-q3kj4/rail-surface-defects-vc32s
-    https://universe.roboflow.com/yolov8-7zf1l/rail-surface/browse?queryText=&pageSize=100&startingIndex=0&browseQuery=true
-    https://universe.roboflow.com/yolov8-7zf1l/rail-surface/browse?queryText=&pageSize=100&startingIndex=0&browseQuery=true

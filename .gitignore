@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Environment
+.env
+.env.*
+
+# ML model files
+*.pt
+*.pth
+*.onnx
+
+# ML results
+**/results/
+**/runs/
+
+# Datasets
+**/dataset/
+**/datasets/
+
+__pycache__/
+*.py[cod]
