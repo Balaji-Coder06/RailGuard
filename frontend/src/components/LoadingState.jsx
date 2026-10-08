@@ -13,7 +13,7 @@ export default function LoadingState() {
 
       <div className="loading-text-group">
         <h4 className="loading-title">Analyzing track...</h4>
-        <p className="loading-subtitle">Running YOLO11 neural defect detection</p>
+        <p className="loading-subtitle">Running YOLO11n defect detection</p>
       </div>
 
       <div className="loading-pulse-line">

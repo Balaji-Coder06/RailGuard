@@ -16,7 +16,6 @@ export default function Header({ systemStatus }) {
           <div>
             <div className="brand-title-row">
               <h1 className="brand-title">RailGuard</h1>
-              <span className="brand-tag">v1.0 • YOLO11</span>
             </div>
             <p className="brand-subtitle">AI-Powered Railway Track Fault Detection</p>
           </div>
@@ -26,7 +25,7 @@ export default function Header({ systemStatus }) {
           <div className={`status-dot ${isOnline ? "online" : "offline"}`} />
           <span className="status-label">
             {isOnline
-              ? `Model: ${systemStatus.model || "YOLO11"} (${systemStatus.device || "Ready"})`
+              ? `Model: ${systemStatus.model || "YOLO11n"} (${systemStatus.device || "Ready"})`
               : "Connecting to Model..."}
           </span>
         </div>

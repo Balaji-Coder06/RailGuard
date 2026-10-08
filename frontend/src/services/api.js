@@ -1,7 +1,7 @@
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 /**
- * Sends a track image to the backend for YOLO11 inference.
+ * Sends a track image to the backend for YOLO11n inference.
  * @param {File} file - The image file to analyze
  * @param {number|null} [confidence] - Optional confidence threshold (0.01 - 1.0)
  * @returns {Promise<Object>} Detection response
@@ -43,7 +43,7 @@ export async function detectImage(file, confidence = null) {
 }
 
 /**
- * Checks backend health and YOLO11 model readiness.
+ * Checks backend health and YOLO11n model readiness.
  * @returns {Promise<Object>}
  */
 export async function checkHealth() {

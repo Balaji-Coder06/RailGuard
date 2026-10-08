@@ -148,7 +148,7 @@ export default function DetectionResult({
                 ? "Annotated railway track defect localization"
                 : "Original camera capture"}
             </span>
-            <span className="image-model-pill">YOLO11 Object Detector</span>
+            <span className="image-model-pill">YOLO11n Detector</span>
           </div>
         </div>
 

@@ -27,7 +27,7 @@ logger = logging.getLogger("railguard.main")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Load YOLO11 model once into memory
+    # Startup: Load YOLO11n model once into memory
     logger.info("Initializing RailGuard DefectDetector service...")
     try:
         DefectDetector.get_instance()
@@ -41,7 +41,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="RailGuard AI Railway Track Defect Detection API",
-    description="High-precision railway track fault detection backend powered by YOLO11.",
+    description="High-precision railway track fault detection backend powered by YOLO11n.",
     version="1.0.0",
     lifespan=lifespan
 )
@@ -80,7 +80,7 @@ async def health_check():
         class_list = [detector.class_names[k] for k in sorted(detector.class_names.keys())]
         return HealthResponse(
             status="ok",
-            model="YOLO11",
+            model="YOLO11n",
             model_loaded=True,
             device=device_label,
             classes=class_list
@@ -89,7 +89,7 @@ async def health_check():
         logger.error(f"Health check failure: {e}")
         return HealthResponse(
             status="error",
-            model="YOLO11",
+            model="YOLO11n",
             model_loaded=False,
             device="unknown",
             classes=[]
@@ -102,7 +102,7 @@ async def detect_track_defect(
     confidence: Optional[float] = Form(None, description="Optional custom confidence threshold (0.01 - 1.0)")
 ):
     """
-    Performs YOLO11 defect detection on an uploaded railway track image.
+    Performs YOLO11n defect detection on an uploaded railway track image.
     Generates annotated image with defect bounding boxes.
     """
     if not image or not image.filename:
@@ -157,7 +157,7 @@ async def detect_track_defect(
                 detail="Confidence threshold must be between 0.01 and 1.0."
             )
 
-    # Run YOLO11 inference
+    # Run YOLO11n inference
     try:
         detector = DefectDetector.get_instance()
         detections, inference_time_ms = detector.predict(image_rgb, confidence_threshold=conf_thresh)
@@ -170,6 +170,7 @@ async def detect_track_defect(
 
     defect_count = len(detections)
     overall_result = "DEFECT DETECTED" if defect_count > 0 else "NO DEFECT DETECTED"
+    has_defect = defect_count > 0
     highest_conf = detections[0]["confidence"] if defect_count > 0 else None
 
     # Generate annotated image
@@ -185,7 +186,9 @@ async def detect_track_defect(
     return DetectionResponse(
         success=True,
         result=overall_result,
+        has_defect=has_defect,
         defect_count=defect_count,
+        count=defect_count,
         detections=detections,
         image_width=width,
         image_height=height,

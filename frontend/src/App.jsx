@@ -130,7 +130,7 @@ export default function App() {
 
       <footer className="footer-bar">
         <div className="footer-content">
-          <span>RailGuard • YOLO11 Real-Time Railway Fault Detection</span>
+          <span>RailGuard • YOLO11n Railway Fault Detection</span>
           <span>Ultralytics YOLO11n Checkpoint • 640×640</span>
         </div>
       </footer>

@@ -16,7 +16,7 @@ INFERENCE_IMAGE_SIZE = int(os.getenv("IMAGE_SIZE", "640"))
 
 class DefectDetector:
     """
-    Singleton service for YOLO11 Railway Defect Detection.
+    Singleton service for YOLO11n Railway Defect Detection.
     Loads the model once at startup and performs optimized inference.
     """
     _instance: Optional["DefectDetector"] = None
@@ -47,18 +47,18 @@ class DefectDetector:
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         
         logger.info("RailGuard backend starting")
-        logger.info(f"Loading YOLO11 model weights from: {self.model_path}")
+        logger.info(f"Loading YOLO11n model weights from: {self.model_path}")
         self.model = YOLO(self.model_path)
         
-        # Log exact device format requested
+        # Log exact device format
         device_label = "CUDA" if self.device == "cuda" else "CPU"
-        logger.info("YOLO11 model loaded")
+        logger.info("YOLO11n model loaded")
         logger.info(f"Device: {device_label}")
-        print(f"RailGuard backend started\nYOLO11 model loaded\nDevice: {device_label}")
+        print(f"RailGuard backend started\nYOLO11n model loaded\nDevice: {device_label}")
 
         # Read actual class names directly from model
         self.class_names: Dict[int, str] = {int(k): str(v) for k, v in self.model.names.items()}
-        logger.info(f"Loaded classes ({len(self.class_names)}): {self.class_names}")
+        logger.info(f"Loaded detector ({len(self.class_names)} classes): {self.class_names}")
 
     @classmethod
     def get_instance(cls, model_path: Optional[str] = None) -> "DefectDetector":
@@ -73,17 +73,18 @@ class DefectDetector:
         confidence_threshold: Optional[float] = None
     ) -> Tuple[List[Dict[str, Any]], float]:
         """
-        Runs YOLO11 inference on an RGB image array.
+        Runs YOLO11n inference on an RGB image array with IoU=0.50.
         Returns: (detections, inference_time_ms)
         """
         conf_thr = confidence_threshold if confidence_threshold is not None else DEFAULT_CONFIDENCE_THRESHOLD
 
         start_time = time.perf_counter()
 
-        # Run Ultralytics inference
+        # Run Ultralytics inference with explicit iou=0.50 and frontend confidence threshold
         results = self.model.predict(
             source=image_rgb,
             conf=conf_thr,
+            iou=0.50,
             imgsz=INFERENCE_IMAGE_SIZE,
             device=self.device,
             verbose=False
@@ -106,16 +107,19 @@ class DefectDetector:
                     coords = box.xyxy[0].tolist()
                     x1, y1, x2, y2 = round(coords[0], 2), round(coords[1], 2), round(coords[2], 2), round(coords[3], 2)
 
+                    bbox_dict = {
+                        "x1": x1,
+                        "y1": y1,
+                        "x2": x2,
+                        "y2": y2
+                    }
+
                     detections.append({
                         "class_id": cls_id,
                         "class_name": cls_name,
                         "confidence": confidence,
-                        "box": {
-                            "x1": x1,
-                            "y1": y1,
-                            "x2": x2,
-                            "y2": y2
-                        }
+                        "box": bbox_dict,
+                        "bbox": bbox_dict
                     })
 
         # Sort detections by confidence descending

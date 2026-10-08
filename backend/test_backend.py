@@ -24,36 +24,28 @@ def run_tests():
     print(f"Health Response: {health_resp.json()}")
     assert health_resp.status_code == 200
     assert health_resp.json()["model_loaded"] is True
-    assert health_resp.json()["model"] == "YOLO11"
+    assert health_resp.json()["model"] == "YOLO11n"
+    assert len(health_resp.json()["classes"]) == 1
     print(">>> PASS: Health check verified!")
 
     # Locate sample test images
     repo_root = os.path.abspath(os.path.join(backend_dir, ".."))
     defect_img_path = os.path.join(repo_root, "test_images", "defect_track_sample.jpg")
-    if not os.path.exists(defect_img_path):
-        defect_img_path = os.path.join(
-            repo_root, "Models", "YOLOv11", "results", "false_positives",
-            "FP_03_20231018_112728_mp4-0042_jpg.rf.702ed1aa2759e00bd4be588cab600735.jpg"
-        )
     no_defect_img_path = os.path.join(repo_root, "test_images", "clean_track_sample.jpg")
-    if not os.path.exists(no_defect_img_path):
-        no_defect_img_path = os.path.join(
-            repo_root, "Models", "YOLOv11", "results", "false_negatives",
-            "FN_06_20231018_112728_mp4-0106_jpg.rf.7748e8d5e975549523149d871a9e297e.jpg"
-        )
 
-    # 2. Test A: Defect Detection
+    # 2. Test A: Defect Detection (YOLO11n)
     print("\n[Test 2 - Test A] Testing POST /api/detect with defect image...")
     assert os.path.exists(defect_img_path), f"Sample defect image not found: {defect_img_path}"
     with open(defect_img_path, "rb") as f:
         img_bytes = f.read()
 
     files = {"image": ("defect_sample.jpg", img_bytes, "image/jpeg")}
-    detect_resp = client.post("/api/detect", files=files)
+    detect_resp = client.post("/api/detect", files=files, data={"confidence": "0.40"})
     print(f"Status Code: {detect_resp.status_code}")
     data = detect_resp.json()
     print(f"Success: {data['success']}")
     print(f"Result: {data['result']}")
+    print(f"Has Defect: {data.get('has_defect')}")
     print(f"Defect Count: {data['defect_count']}")
     print(f"Highest Confidence: {data.get('highest_confidence')}")
     print(f"Inference Time: {data.get('inference_time_ms')} ms")
@@ -65,11 +57,16 @@ def run_tests():
     assert detect_resp.status_code == 200
     assert data["success"] is True
     assert data["result"] == "DEFECT DETECTED"
+    assert data["has_defect"] is True
     assert data["defect_count"] > 0
     assert len(data["detections"]) > 0
-    assert data["detections"][0]["class_name"] == "defect"
+    # Verified defect detection contains actual model class names
+    valid_classes = ["defect"]
+    assert data["detections"][0]["class_name"] in valid_classes
+    assert data["detections"][0]["bbox"] is not None
+    assert data["detections"][0]["box"] is not None
     assert data["image_id"] is not None
-    print(">>> PASS: Defect detection verified (Test A)!")
+    print(f">>> PASS: Defect detection verified (Test A) with detected class '{data['detections'][0]['class_name']}'!")
 
     # 3. Test Retrieving Annotated Image
     print("\n[Test 3] Testing GET /api/result/{image_id}...")
@@ -83,8 +80,20 @@ def run_tests():
     assert len(result_img_resp.content) > 1000
     print(">>> PASS: Annotated image retrieval verified!")
 
-    # 4. Test B: No Defect Detection
-    print("\n[Test 4 - Test B] Testing POST /api/detect with clean/no-defect image...")
+    # 4. Test Confidence Slider Filtering (e.g. 0.70 threshold)
+    print("\n[Test 4] Testing confidence filtering at 0.70 threshold...")
+    files_high_conf = {"image": ("defect_sample.jpg", img_bytes, "image/jpeg")}
+    high_conf_resp = client.post("/api/detect", files=files_high_conf, data={"confidence": "0.70"})
+    assert high_conf_resp.status_code == 200
+    high_conf_data = high_conf_resp.json()
+    print(f"Detections at 0.70: {high_conf_data['defect_count']} (vs {data['defect_count']} at 0.40)")
+    assert high_conf_data["defect_count"] <= data["defect_count"]
+    for det in high_conf_data["detections"]:
+        assert det["confidence"] >= 0.70
+    print(">>> PASS: Frontend confidence threshold control verified!")
+
+    # 5. Test B: Clean image detection
+    print("\n[Test 5 - Test B] Testing POST /api/detect with clean/no-defect image...")
     assert os.path.exists(no_defect_img_path), f"Clean test image not found: {no_defect_img_path}"
     with open(no_defect_img_path, "rb") as f:
         clean_bytes = f.read()

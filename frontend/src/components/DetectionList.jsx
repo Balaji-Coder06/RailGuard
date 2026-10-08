@@ -22,13 +22,13 @@ export default function DetectionList({ detections, hasDefects }) {
     <div className="defect-list-container">
       <div className="defect-list-header">
         <h4 className="defect-list-title">Detected Defects ({detections.length})</h4>
-        <span className="defect-list-badge">Model Class: defect</span>
+        <span className="defect-list-badge">10-Class Detection</span>
       </div>
 
       <div className="defect-items-scroll">
         {detections.map((item, index) => {
           const confPercent = (item.confidence * 100).toFixed(1);
-          const box = item.box || {};
+          const box = item.bbox || item.box || {};
           const boxLabel = `[${Math.round(box.x1)}, ${Math.round(box.y1)}] → [${Math.round(box.x2)}, ${Math.round(box.y2)}]`;
 
           return (
@@ -37,7 +37,7 @@ export default function DetectionList({ detections, hasDefects }) {
                 <span className="defect-item-index">#{index + 1}</span>
                 <div className="defect-item-info">
                   <span className="defect-class-name">
-                    {item.class_name.charAt(0).toUpperCase() + item.class_name.slice(1)}
+                    {item.class_name ? item.class_name.toUpperCase() : "DEFECT"}
                   </span>
                   <span className="defect-coords" title="Bounding Box Coordinates">
                     {boxLabel}

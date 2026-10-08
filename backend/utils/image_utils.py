@@ -77,15 +77,15 @@ def draw_annotations(
     font_thickness = max(1, int(round(1.5 * scale_factor)))
 
     for det in detections:
-        box = det["box"]
+        box = det.get("bbox") or det.get("box", {})
         x1 = max(0, min(img_w - 1, int(round(box["x1"]))))
         y1 = max(0, min(img_h - 1, int(round(box["y1"]))))
         x2 = max(0, min(img_w - 1, int(round(box["x2"]))))
         y2 = max(0, min(img_h - 1, int(round(box["y2"]))))
 
-        cls_name = det.get("class_name", "defect")
-        conf = det.get("confidence", 0.0)
-        label_text = f"{cls_name} {conf:.2f} ({conf * 100:.1f}%)"
+        cls_name = str(det.get("class_name", "defect")).upper()
+        conf = float(det.get("confidence", 0.0))
+        label_text = f"{cls_name} {conf:.2f}"
 
         # 1. Main bounding box (subtle translucent fill inside box)
         overlay = bgr_img.copy()

@@ -8,9 +8,9 @@
 ![Status](https://img.shields.io/badge/Status-Active%20Research-orange.svg)
 ![License](https://img.shields.io/badge/License-AGPL--3.0-green.svg)
 
-RailGuard is an empirical research project focused on deep learning-based object detection for railway track defects. It investigates and benchmarks lightweight nano object detectors—specifically **YOLO11n**, **YOLOv8n**, and **YOLO26n**—for binary defect identification and bounding-box localization on railway track surface imagery.
+RailGuard is an empirical research project focused on deep learning-based object detection for railway track defects. It investigates and benchmarks lightweight nano object detectors—specifically **YOLO11n**, **YOLOv8n**, and **YOLO26n**—for single-class (baseline) defect identification and bounding-box localization, with the web app now serving a YOLO11n detector.
 
-> **Scope & Capabilities Note:** The trained models currently implemented in this repository operate as **binary object detectors** (detecting whether a track defect is present and localizing it with a bounding box under class `defect`). They do not classify specific defect sub-types (e.g., distinguishing cracks vs. flakings), produce GPS coordinates, or compute automated severity metrics. Advanced features like FPGA deployment, multi-class categorization, and automated severity assessment represent active research goals supported by literature in the reference papers, but are not yet implemented in code.
+> **Scope & Capabilities Note:** The benchmark experiments documented in the `Models/` directory are Phase 1 single-class baselines (detecting whether a track defect is present and localizing it with a bounding box under class `defect`). The web application backend now serves a **YOLO11n** detector. Features like FPGA deployment, GPS coordinates, and automated severity assessment remain active research goals.
 
 ---
 
@@ -42,8 +42,24 @@ Key elements verified in this repository:
 - **Trained Model Checkpoints:** Saved weights for **YOLO11n** (`YOLO11_railway_defect_best.pt`), **YOLOv8n** (`YOLOv8_railway_defect_best.pt`), and **YOLO26n** (`YOLO26_railway_defect_best.pt`).
 - **Complete Experiment Records:** Per-epoch training logs, evaluation metrics, confusion matrices, and precision/recall curves for each architecture.
 - **Error Analysis & Failure Mode Auditing:** Detailed object-level false-positive and false-negative analysis on held-out test data.
-- **Comparative Analysis Notebook:** A centralized cross-model comparison (`Model Dataset/comparison.ipynb`) evaluating validation, test, and error profiles.
+- **Comparative Analysis Notebook:** A centralized cross-model comparison (`Models/comparison.ipynb`) evaluating validation, test, and error profiles.
 - **Academic Research References:** A curated set of 8 research papers in `reference research papers/` covering FPGA edge acceleration, binary neural networks (BNN), and optical track inspection.
+
+---
+
+## Project Stages
+
+### Phase 1: Single-Class Baseline
+Initial benchmarking of lightweight nano object detectors (YOLOv8n, YOLO11n, YOLO26n) on a single-class dataset (detecting `defect` vs background). Extensive results, logs, and error analyses are documented in the `Models/` directory.
+
+| Model | Checkpoint File | Size | Parameters (Fused) | Test Images | Ground-Truth Objects | Precision | Recall | F1-Score | mAP@50 | mAP@50-95 |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| **YOLO11n** | `YOLO11_railway_defect_best.pt` | 5.22 MiB | 2,582,347 | 310 | 1,494 | **0.4770** | 0.4060 | **0.4390** | **0.4000** | **0.1440** |
+| **YOLOv8n** | `YOLOv8_railway_defect_best.pt` | 5.96 MiB | 3,005,843 | 310 | 1,494 | 0.4316 | **0.4258** | 0.4287 | 0.3975 | 0.1372 |
+| **YOLO26n** | `YOLO26_railway_defect_best.pt` | 5.14 MiB | 2,375,031 | 300 | 1,494 | 0.4344 | 0.3762 | 0.4032 | 0.3745 | 0.1363 |
+
+### Phase 2: Multi-Class Detection (In Progress)
+Transitioning to multi-class defect categorization (10 classes: broken-rail, corrosion, cracks, flakings, joints, missing-fastener, shelling, spalling, squats, wheel-burn). The backend currently serves a YOLO11n model, full multi-class benchmarking and retraining are not yet complete.
 
 ---
 
@@ -58,16 +74,16 @@ The primary dataset used for training and evaluation is the **Railway Track Surf
 - **Data Article:** [PMC10828558](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10828558/)
 - **Acquisition:** Video recorded at 120 FPS by two EKEN-H9R cameras mounted on an inspection vehicle at Kotri Junction, Pakistan Railway.
 
-Additional reference dataset links tracked in `datasets.txt`:
+Additional reference dataset links:
 - [Roboflow: rail-surface-defects-vc32s](https://universe.roboflow.com/ai-model-q3kj4/rail-surface-defects-vc32s)
 - [Roboflow: rail-surface](https://universe.roboflow.com/yolov8-7zf1l/rail-surface)
 
-### Annotation & Binary Conversion
+### Phase 1: Single-Class Baseline Annotation
 
 The raw Mendeley dataset contains multi-class labels covering defects such as Grooves, Joints, Cracks, Flakings, Shellings, Spallings, and Squats across class IDs `0`–`9`. 
 
 In the experimental pipeline documented in `model.ipynb`:
-1. All original class IDs were collapsed to a single class: **`0: defect`**.
+1. For Phase 1 baselines, all original class IDs were collapsed to a single class: **`0: defect`**.
 2. Normalized bounding-box coordinates (`x_center`, `y_center`, `width`, `height`) were preserved without alteration.
 3. Images without defect annotations serve as negative background samples.
 4. No synthetic images or synthetic annotations were generated.
@@ -86,7 +102,7 @@ The experiments were executed on pre-split YOLO-format data (`rail defects detec
 *Note on Splits:*
 - For YOLOv8 and YOLO11, the 310 test images include 297 images with labels and 13 background images (0 objects).
 - For YOLO26, orphan labels and 10 object-free images were pruned, yielding 300 test images containing the exact same 1,494 ground-truth defect annotations.
-- The raw training images are hosted remotely (Mendeley / Kaggle). Locally within this repository, held-out test predictions (310 images and 273 label files for YOLOv8) and 10 representative predictions + 20 error analysis examples (10 FP, 10 FN) per model are stored in `Model Dataset/<model>/results/`.
+- The raw training images are hosted remotely (Mendeley / Kaggle). Locally within this repository, held-out test predictions (310 images and 273 label files for YOLOv8) and 10 representative predictions + 20 error analysis examples (10 FP, 10 FN) per model are stored in `Models/<model>/results/`.
 
 ---
 
@@ -107,7 +123,7 @@ RailGuard/
 │   ├── s40534-026-00434-7.pdf
 │   ├── s44163-026-01298-w.pdf
 │   └── sensors-26-00906.pdf
-└── Model Dataset/
+└── Models/
     ├── comparison.ipynb                        # Cross-model evaluation & chart comparison
     ├── YOLOv8/
     │   ├── README.md                           # Detailed YOLOv8 experiment documentation
@@ -165,7 +181,7 @@ RailGuard/
 
 ## Experimental Results
 
-All numbers below are extracted directly from the verified CSV files (`evaluation_log.csv`, `training_log.csv`, `results.csv`, `error_analysis.csv`) and cross-checked against `Model Dataset/comparison.ipynb`.
+All numbers below are extracted directly from the verified CSV files (`evaluation_log.csv`, `training_log.csv`, `results.csv`, `error_analysis.csv`) and cross-checked against `Models/comparison.ipynb`.
 
 ### Held-Out Test Set Performance
 
@@ -173,9 +189,9 @@ Evaluated using the standard Ultralytics evaluation pipeline (`split="test"`, `i
 
 | Model | Checkpoint File | Size | Parameters (Fused) | Test Images | Ground-Truth Objects | Precision | Recall | F1-Score | mAP@50 | mAP@50-95 | Source File |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
-| **YOLO11n** | `YOLO11_railway_defect_best.pt` | 5.22 MiB | 2,582,347 | 310 | 1,494 | **0.4770** | 0.4060 | **0.4390** | **0.4000** | **0.1440** | `Model Dataset/YOLOv11/evaluation_log.csv` |
-| **YOLOv8n** | `YOLOv8_railway_defect_best.pt` | 5.96 MiB | 3,005,843 | 310 | 1,494 | 0.4316 | **0.4258** | 0.4287 | 0.3975 | 0.1372 | `Model Dataset/YOLOv8/evaluation_log.csv` |
-| **YOLO26n** | `YOLO26_railway_defect_best.pt` | 5.14 MiB | 2,375,031 | 300 | 1,494 | 0.4344 | 0.3762 | 0.4032 | 0.3745 | 0.1363 | `Model Dataset/YOLOv26/evaluation_log.csv` |
+| **YOLO11n** | `YOLO11_railway_defect_best.pt` | 5.22 MiB | 2,582,347 | 310 | 1,494 | **0.4770** | 0.4060 | **0.4390** | **0.4000** | **0.1440** | `Models/YOLOv11/evaluation_log.csv` |
+| **YOLOv8n** | `YOLOv8_railway_defect_best.pt` | 5.96 MiB | 3,005,843 | 310 | 1,494 | 0.4316 | **0.4258** | 0.4287 | 0.3975 | 0.1372 | `Models/YOLOv8/evaluation_log.csv` |
+| **YOLO26n** | `YOLO26_railway_defect_best.pt` | 5.14 MiB | 2,375,031 | 300 | 1,494 | 0.4344 | 0.3762 | 0.4032 | 0.3745 | 0.1363 | `Models/YOLOv26/evaluation_log.csv` |
 
 **Key Observations:**
 - **YOLO11n** achieved the highest overall performance on the test set across precision (0.477), F1-score (0.439), mAP@50 (0.400), and mAP@50-95 (0.144).
@@ -221,20 +237,20 @@ All models were trained on an **NVIDIA Tesla T4 GPU** (CUDA 12.8, PyTorch 2.11.0
 
 ## RailGuard Full-Stack Application
 
-**AI-Powered Railway Track Fault Detection and Monitoring System Using YOLO11**
+**AI-Powered Railway Track Fault Detection and Monitoring System Using YOLO11n**
 
-RailGuard includes a production-quality full-stack prototype that enables operators and engineers to upload railway track imagery, run YOLO11 inference, and visualize defects with high-precision bounding boxes in real time.
+RailGuard includes a production-quality full-stack prototype that enables operators and engineers to upload railway track imagery, run YOLO11n inference, and visualize defect bounding boxes with confidence scores in real time.
 
 ### Architecture
 
 ```text
 React Frontend (Vite)
-       ↓  multipart/form-data (image)
+       ↓  multipart/form-data (image + confidence threshold)
 REST API (/api/detect)
        ↓
 FastAPI Backend
-       ↓  Inference (imgsz=640)
-YOLO11 Object Detector (best.pt)
+       ↓  Inference (imgsz=640, iou=0.50)
+YOLO11n Object Detector
        ↓
 Detection Result (JSON + Annotated Imagery)
 ```
@@ -251,7 +267,7 @@ python -m uvicorn main:app --reload --host 127.0.0.1 --port 8000
 
 The backend loads `backend/models/best.pt` once at startup, keeps the model in memory, automatically uses CUDA when available (with graceful CPU fallback), and exposes:
 - `GET  /api/health` — Service readiness & model status
-- `POST /api/detect` — Single-image YOLO11 inference
+- `POST /api/detect` — YOLO11n inference
 - `GET  /api/result/{image_id}` — Annotated defect visualization fetch
 
 #### Frontend Setup
@@ -278,7 +294,7 @@ VITE_API_URL=http://localhost:8000
 The backend can be configured via environment variables:
 | Variable | Default | Description |
 |---|---|---|
-| `MODEL_PATH` | `models/best.pt` | Path to trained YOLO11 checkpoint |
+| `MODEL_PATH` | `models/best.pt` | Path to trained YOLO11n checkpoint |
 | `CONFIDENCE_THRESHOLD` | `0.40` | Default confidence score cutoff |
 | `IMAGE_SIZE` | `640` | YOLO inference input size |
 | `CORS_ORIGINS` | `http://localhost:5173,http://127.0.0.1:5173` | Allowed CORS origins |
@@ -310,9 +326,9 @@ You can run defect detection using any of the three trained checkpoints directly
 from ultralytics import YOLO
 
 # 1. Load trained weights (select one)
-model = YOLO("Model Dataset/YOLOv11/YOLO11_railway_defect_best.pt")
-# model = YOLO("Model Dataset/YOLOv8/YOLOv8_railway_defect_best.pt")
-# model = YOLO("Model Dataset/YOLOv26/YOLO26_railway_defect_best.pt")
+model = YOLO("Models/YOLOv11/YOLO11_railway_defect_best.pt")
+# model = YOLO("Models/YOLOv8/YOLOv8_railway_defect_best.pt")
+# model = YOLO("Models/YOLOv26/YOLO26_railway_defect_best.pt")
 
 # 2. Run prediction on a test image
 results = model.predict(
@@ -336,13 +352,13 @@ You can also run predictions from your terminal using the Ultralytics CLI:
 
 ```bash
 # Using YOLO11n
-yolo predict model="Model Dataset/YOLOv11/YOLO11_railway_defect_best.pt" source="path/to/rail_image.jpg" imgsz=640 conf=0.25
+yolo predict model="Models/YOLOv11/YOLO11_railway_defect_best.pt" source="path/to/rail_image.jpg" imgsz=640 conf=0.25
 
 # Using YOLOv8n
-yolo predict model="Model Dataset/YOLOv8/YOLOv8_railway_defect_best.pt" source="path/to/rail_image.jpg" imgsz=640 conf=0.25
+yolo predict model="Models/YOLOv8/YOLOv8_railway_defect_best.pt" source="path/to/rail_image.jpg" imgsz=640 conf=0.25
 
 # Using YOLO26n
-yolo predict model="Model Dataset/YOLOv26/YOLO26_railway_defect_best.pt" source="path/to/rail_image.jpg" imgsz=640 conf=0.25
+yolo predict model="Models/YOLOv26/YOLO26_railway_defect_best.pt" source="path/to/rail_image.jpg" imgsz=640 conf=0.25
 ```
 
 ### Running the Notebooks
@@ -352,9 +368,9 @@ All training, validation, error analysis, and comparative charts can be reproduc
 ```bash
 jupyter notebook
 ```
-- Open `Model Dataset/comparison.ipynb` to view the comprehensive metric comparison and error analysis charts.
-- Open `Model Dataset/<model>/model.ipynb` to view the full training run pipeline.
-- Open `Model Dataset/<model>/testing.ipynb` to view test evaluation and prediction generation.
+- Open `Models/comparison.ipynb` to view the comprehensive metric comparison and error analysis charts.
+- Open `Models/<model>/model.ipynb` to view the full training run pipeline.
+- Open `Models/<model>/testing.ipynb` to view test evaluation and prediction generation.
 
 ---
 
@@ -362,12 +378,12 @@ jupyter notebook
 
 The following features represent planned research and development extensions (currently **NOT implemented** in this repository):
 
-- [ ] **Multi-Class Defect Categorization:** Train multi-head detectors to distinguish specific defect categories (Cracks, Joints, Squats, Flakings, Shellings, Spallings, Grooves) rather than binary defect detection.
+- [ ] **Multi-Class Defect Categorization:** (In progress) The web app serves a YOLO11n detector, but multi-class benchmarking and retraining are not yet fully documented.
 - [ ] **Transformer-Based Object Detection:** Benchmark against real-time detection transformers (e.g., RF-DETR, RT-DETR) as noted in the model notes.
 - [ ] **FPGA / Edge Hardware Acceleration:** Implement quantized, low-power neural networks (e.g., Binary Neural Networks or INT8 quantization) for deployment on edge FPGA boards (referencing papers in `reference research papers/`).
 - [ ] **Automated Defect Severity Assessment:** Implement geometric defect measurement (depth, surface area, track boundary ratio) to grade defect severity.
-- [ ] **Video Stream & Real-Time Track Monitoring:** Develop real-time video processing pipelines for automated inspection vehicles with frame-level defect tracking.
-- [ ] **Production Web Dashboard & REST API:** Build a lightweight dashboard and API for live defect visualization and telemetry reporting.
+- [ ] **Live video streaming, defect tracking and telemetry reporting:** Develop real-time video processing pipelines for automated inspection vehicles with frame-level defect tracking.
+- [x] **Image-upload web dashboard and REST API (FastAPI + React):** Build a lightweight dashboard and API for live defect visualization.
 
 ---
 
