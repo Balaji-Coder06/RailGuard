@@ -84,6 +84,8 @@ def draw_annotations(
         y2 = max(0, min(img_h - 1, int(round(box["y2"]))))
 
         cls_name = str(det.get("class_name", "defect")).upper()
+        if cls_name.startswith("CLASS"):
+            cls_name = "DEFECT"
         conf = float(det.get("confidence", 0.0))
         label_text = f"{cls_name} {conf:.2f}"
 

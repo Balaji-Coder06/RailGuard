@@ -22,7 +22,7 @@ export default function DetectionList({ detections, hasDefects }) {
     <div className="defect-list-container">
       <div className="defect-list-header">
         <h4 className="defect-list-title">Detected Defects ({detections.length})</h4>
-        <span className="defect-list-badge">10-Class Detection</span>
+        <span className="defect-list-badge">Defect Detection</span>
       </div>
 
       <div className="defect-items-scroll">
@@ -30,6 +30,8 @@ export default function DetectionList({ detections, hasDefects }) {
           const confPercent = (item.confidence * 100).toFixed(1);
           const box = item.bbox || item.box || {};
           const boxLabel = `[${Math.round(box.x1)}, ${Math.round(box.y1)}] → [${Math.round(box.x2)}, ${Math.round(box.y2)}]`;
+          const rawName = item.class_name ? String(item.class_name).trim() : "DEFECT";
+          const displayName = /^class/i.test(rawName) ? "DEFECT" : rawName.toUpperCase();
 
           return (
             <div key={index} className="defect-item-row">
@@ -37,7 +39,7 @@ export default function DetectionList({ detections, hasDefects }) {
                 <span className="defect-item-index">#{index + 1}</span>
                 <div className="defect-item-info">
                   <span className="defect-class-name">
-                    {item.class_name ? item.class_name.toUpperCase() : "DEFECT"}
+                    {displayName}
                   </span>
                   <span className="defect-coords" title="Bounding Box Coordinates">
                     {boxLabel}

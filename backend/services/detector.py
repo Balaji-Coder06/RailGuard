@@ -100,7 +100,7 @@ class DefectDetector:
             if boxes is not None and len(boxes) > 0:
                 for box in boxes:
                     cls_id = int(box.cls[0].item())
-                    cls_name = self.class_names.get(cls_id, f"class_{cls_id}")
+                    cls_name = self.class_names.get(cls_id, "defect")
                     confidence = round(float(box.conf[0].item()), 4)
                     
                     # Bounding box xyxy coordinates
