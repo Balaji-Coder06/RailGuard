@@ -1,0 +1,13 @@
+train: train/images
+val: valid/images
+test: test/images
+nc: 1
+names:
+- defect
+roboflow:
+  workspace: s-balaji-b47lj
+  project: rail-surface-pbrj9
+  version: 1
+  license: CC BY 4.0
+  url: https://app.roboflow.com/s-balaji-b47lj/rail-surface-pbrj9/1
+path: /content/rail_surface

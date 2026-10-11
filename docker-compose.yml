@@ -1,0 +1,27 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: railguard-backend
+    ports:
+      - "8000:7860"
+    environment:
+      - MODEL_PATH=/app/backend/models/best.pt
+      - DATA_YAML_PATH=/app/data.yaml
+      - DATABASE_URL=sqlite:////app/backend/data/railguard.db
+    volumes:
+      - ./backend/data:/app/backend/data
+      - ./backend/uploads:/app/backend/uploads
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: railguard-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
