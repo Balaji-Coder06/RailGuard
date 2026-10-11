@@ -4,8 +4,8 @@ import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { X } from 'lucide-react';
 
-export const Layout: React.FC = () => {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
+export const Layout = () => {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
     <div className="flex h-screen bg-[#07090e] text-slate-100 overflow-hidden">

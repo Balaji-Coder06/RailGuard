@@ -14,22 +14,21 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { api, buildImageUrl } from '../services/api';
-import type { Inspection } from '../types';
 import { ImageComparisonSlider } from '../components/common/ImageComparisonSlider';
 import { StatusBadge } from '../components/common/StatusBadge';
 
-export const NewInspection: React.FC = () => {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [confidence, setConfidence] = useState<number>(0.25);
-  const [isDragging, setIsDragging] = useState<boolean>(false);
-  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
-  const [inspectionResult, setInspectionResult] = useState<Inspection | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+export const NewInspection = () => {
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [confidence, setConfidence] = useState(0.25);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [inspectionResult, setInspectionResult] = useState(null);
+  const [errorMessage, setErrorMessage] = useState(null);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef(null);
 
-  const validateAndSetFile = (file: File) => {
+  const validateAndSetFile = (file) => {
     setErrorMessage(null);
     setInspectionResult(null);
 
@@ -50,7 +49,7 @@ export const NewInspection: React.FC = () => {
     setPreviewUrl(objectUrl);
   };
 
-  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+  const handleDrop = useCallback((e) => {
     e.preventDefault();
     setIsDragging(false);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
@@ -58,12 +57,12 @@ export const NewInspection: React.FC = () => {
     }
   }, []);
 
-  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+  const handleDragOver = useCallback((e) => {
     e.preventDefault();
     setIsDragging(true);
   }, []);
 
-  const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+  const handleDragLeave = useCallback((e) => {
     e.preventDefault();
     setIsDragging(false);
   }, []);
@@ -81,7 +80,7 @@ export const NewInspection: React.FC = () => {
     }
   };
 
-  const loadSampleTrack = async (samplePath: string, filename: string) => {
+  const loadSampleTrack = async (samplePath, filename) => {
     setErrorMessage(null);
     setInspectionResult(null);
     try {
@@ -103,7 +102,7 @@ export const NewInspection: React.FC = () => {
     try {
       const result = await api.detect(selectedFile, selectedFile.name, confidence);
       setInspectionResult(result);
-    } catch (err: unknown) {
+    } catch (err) {
       if (err instanceof Error) {
         setErrorMessage(err.message);
       } else {
@@ -187,7 +186,7 @@ export const NewInspection: React.FC = () => {
 
       {/* Main Grid: Upload & Controls on Left, Analysis/Result on Right */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Upload & Parameters (4 cols on lg) */}
+        {/* Left Column: Upload & Parameters (5 cols on lg) */}
         <div className="lg:col-span-5 space-y-5">
           {/* File Upload Zone */}
           <div className="rounded-xl border border-slate-800 bg-[#0d121c]/90 p-5 shadow-xl space-y-4">

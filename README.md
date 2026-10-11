@@ -33,7 +33,7 @@ Before writing code or serving inference, the supplied checkpoint and dataset fi
 
 ## 2. Key Architecture & Features
 
-### Frontend (React 19 + TypeScript + Tailwind CSS)
+### Frontend (React 19 + JavaScript + Tailwind CSS)
 1. **Overview Dashboard**: Real-time KPI cards (Total Inspections, Defects Found, Clean Rails, Avg Latency), active model telemetry, recent inspection audit log, and backend connectivity monitor.
 2. **New Inspection**:
    - Drag-and-drop file upload with format/size validation (JPEG, PNG, WEBP, BMP up to 15MB).

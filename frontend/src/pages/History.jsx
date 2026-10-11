@@ -14,29 +14,28 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { api, buildImageUrl } from '../services/api';
-import type { Inspection } from '../types';
 import { StatusBadge } from '../components/common/StatusBadge';
 import { EmptyState } from '../components/common/EmptyState';
 import { ImageComparisonSlider } from '../components/common/ImageComparisonSlider';
 
-export const History: React.FC = () => {
+export const History = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [inspections, setInspections] = useState<Inspection[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [total, setTotal] = useState<number>(0);
-  const [page, setPage] = useState<number>(1);
-  const [totalPages, setTotalPages] = useState<number>(1);
+  const [inspections, setInspections] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   // Filters & State
-  const [searchTerm, setSearchTerm] = useState<string>('');
-  const [statusFilter, setStatusFilter] = useState<string>('ALL');
-  const [sortBy, setSortBy] = useState<string>('date_desc');
-  const [viewMode, setViewMode] = useState<'grid' | 'table'>('table');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [sortBy, setSortBy] = useState('date_desc');
+  const [viewMode, setViewMode] = useState('table');
 
   // Detail Modal & Delete Confirmation Modal
-  const [selectedInspection, setSelectedInspection] = useState<Inspection | null>(null);
-  const [inspectionToDelete, setInspectionToDeleteToDelete] = useState<Inspection | null>(null);
-  const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const [selectedInspection, setSelectedInspection] = useState(null);
+  const [inspectionToDelete, setInspectionToDeleteToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchHistory = async () => {
     setLoading(true);
@@ -79,7 +78,7 @@ export const History: React.FC = () => {
     fetchHistory();
   }, [page, statusFilter, sortBy]);
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
+  const handleSearchSubmit = (e) => {
     e.preventDefault();
     setPage(1);
     fetchHistory();
@@ -285,7 +284,7 @@ export const History: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => setSelectedInspection(insp)}
-                          className="p-1.5 rounded bg-slate-900 border border-slate-800 hover:border-[#a3e635] text-slate-300 hover:text-white"
+                          className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 hover:border-[#a3e635] text-slate-300 hover:text-white"
                           title="View Details"
                         >
                           <ExternalLink className="w-3.5 h-3.5" />
@@ -293,7 +292,7 @@ export const History: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => setInspectionToDeleteToDelete(insp)}
-                          className="p-1.5 rounded bg-slate-900 border border-slate-800 hover:border-rose-500 text-slate-400 hover:text-rose-400"
+                          className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 hover:border-rose-500 text-slate-400 hover:text-rose-400"
                           title="Delete Record"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -349,7 +348,7 @@ export const History: React.FC = () => {
                     className="text-xs font-semibold text-[#a3e635] hover:underline flex items-center gap-1"
                   >
                     View Details
-                    <ExternalLink className="w-3 h-3" />
+                    <ExternalLink className="w-3.5 h-3.5" />
                   </button>
                   <button
                     type="button"

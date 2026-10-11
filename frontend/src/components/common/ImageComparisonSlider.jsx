@@ -1,27 +1,19 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Columns, SplitSquareVertical } from 'lucide-react';
 
-interface ImageComparisonSliderProps {
-  originalSrc: string;
-  annotatedSrc: string;
-  originalAlt?: string;
-  annotatedAlt?: string;
-  detectionCount?: number;
-}
-
-export const ImageComparisonSlider: React.FC<ImageComparisonSliderProps> = ({
+export const ImageComparisonSlider = ({
   originalSrc,
   annotatedSrc,
   originalAlt = 'Original Track',
   annotatedAlt = 'Annotated Defects',
   detectionCount = 0,
 }) => {
-  const [mode, setMode] = useState<'slider' | 'side-by-side'>('slider');
-  const [sliderPos, setSliderPos] = useState<number>(50); // percentage 0 - 100
-  const [isDragging, setIsDragging] = useState<boolean>(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [mode, setMode] = useState('slider');
+  const [sliderPos, setSliderPos] = useState(50); // percentage 0 - 100
+  const [isDragging, setIsDragging] = useState(false);
+  const containerRef = useRef(null);
 
-  const handleMove = useCallback((clientX: number) => {
+  const handleMove = useCallback((clientX) => {
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
     const x = clientX - rect.left;
@@ -29,13 +21,13 @@ export const ImageComparisonSlider: React.FC<ImageComparisonSliderProps> = ({
     setSliderPos(percent);
   }, []);
 
-  const handleTouchMove = useCallback((e: TouchEvent) => {
-    if (e.touches[0]) {
+  const handleTouchMove = useCallback((e) => {
+    if (e.touches && e.touches[0]) {
       handleMove(e.touches[0].clientX);
     }
   }, [handleMove]);
 
-  const handleMouseMove = useCallback((e: MouseEvent) => {
+  const handleMouseMove = useCallback((e) => {
     handleMove(e.clientX);
   }, [handleMove]);
 

@@ -9,15 +9,14 @@ import {
   Cpu,
 } from 'lucide-react';
 import { api, getApiBaseUrl, setCustomApiBaseUrl } from '../services/api';
-import type { HealthStatus, ModelInfo } from '../types';
 
-export const Settings: React.FC = () => {
-  const [health, setHealth] = useState<HealthStatus | null>(null);
-  const [modelInfo, setModelInfo] = useState<ModelInfo | null>(null);
-  const [pingLatency, setPingLatency] = useState<number | null>(null);
-  const [isPinging, setIsPinging] = useState<boolean>(false);
-  const [customApiUrl, setCustomApiUrl] = useState<string>(getApiBaseUrl());
-  const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
+export const Settings = () => {
+  const [health, setHealth] = useState(null);
+  const [modelInfo, setModelInfo] = useState(null);
+  const [pingLatency, setPingLatency] = useState(null);
+  const [isPinging, setIsPinging] = useState(false);
+  const [customApiUrl, setCustomApiUrl] = useState(getApiBaseUrl());
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   const runHealthCheck = async () => {
     setIsPinging(true);
@@ -47,7 +46,7 @@ export const Settings: React.FC = () => {
     runHealthCheck();
   }, []);
 
-  const handleSaveApiUrl = (e: React.FormEvent) => {
+  const handleSaveApiUrl = (e) => {
     e.preventDefault();
     setCustomApiBaseUrl(customApiUrl);
     setSaveSuccess(true);

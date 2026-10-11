@@ -2,11 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, Crosshair } from 'lucide-react';
 
-interface HeaderProps {
-  onToggleMobileMenu: () => void;
-}
-
-export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
+export const Header = ({ onToggleMobileMenu }) => {
   const location = useLocation();
 
   const getPageTitle = () => {

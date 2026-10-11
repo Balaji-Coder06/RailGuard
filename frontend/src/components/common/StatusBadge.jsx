@@ -1,15 +1,7 @@
 import React from 'react';
 import { AlertTriangle, CheckCircle2, XCircle } from 'lucide-react';
-import type { InspectionStatus } from '../../types';
 
-interface StatusBadgeProps {
-  status: InspectionStatus;
-  count?: number;
-  className?: string;
-  size?: 'sm' | 'md' | 'lg';
-}
-
-export const StatusBadge: React.FC<StatusBadgeProps> = ({
+export const StatusBadge = ({
   status,
   count,
   className = '',
@@ -19,7 +11,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
     sm: 'text-xs px-2 py-0.5 gap-1',
     md: 'text-xs px-2.5 py-1 gap-1.5 font-semibold',
     lg: 'text-sm px-3.5 py-1.5 gap-2 font-bold',
-  }[size];
+  }[size] || 'text-xs px-2.5 py-1 gap-1.5 font-semibold';
 
   if (status === 'DEFECT_DETECTED') {
     return (

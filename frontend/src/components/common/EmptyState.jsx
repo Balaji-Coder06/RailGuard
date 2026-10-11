@@ -1,18 +1,8 @@
 import React from 'react';
-import type { LucideIcon } from 'lucide-react';
 import { Search, PlusCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-interface EmptyStateProps {
-  icon?: LucideIcon;
-  title: string;
-  description: string;
-  actionText?: string;
-  actionLink?: string;
-  onAction?: () => void;
-}
-
-export const EmptyState: React.FC<EmptyStateProps> = ({
+export const EmptyState = ({
   icon: Icon = Search,
   title,
   description,

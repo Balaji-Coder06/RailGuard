@@ -13,18 +13,17 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { api, buildImageUrl } from '../services/api';
-import type { StatsResponse, Inspection, ModelInfo, HealthStatus } from '../types';
 import { StatCard } from '../components/common/StatCard';
 import { StatusBadge } from '../components/common/StatusBadge';
 import { EmptyState } from '../components/common/EmptyState';
 
-export const Overview: React.FC = () => {
-  const [stats, setStats] = useState<StatsResponse | null>(null);
-  const [recentInspections, setRecentInspections] = useState<Inspection[]>([]);
-  const [modelInfo, setModelInfo] = useState<ModelInfo | null>(null);
-  const [health, setHealth] = useState<HealthStatus | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+export const Overview = () => {
+  const [stats, setStats] = useState(null);
+  const [recentInspections, setRecentInspections] = useState([]);
+  const [modelInfo, setModelInfo] = useState(null);
+  const [health, setHealth] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const loadDashboardData = async () => {
     setLoading(true);
@@ -40,7 +39,7 @@ export const Overview: React.FC = () => {
       setRecentInspections(listData.items);
       setModelInfo(modelData);
       setHealth(healthData);
-    } catch (err: unknown) {
+    } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
       } else {
@@ -238,7 +237,7 @@ export const Overview: React.FC = () => {
               </h3>
             </div>
             <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-              {health?.status.toUpperCase() ?? 'CHECKING'}
+              {health?.status ? health.status.toUpperCase() : 'CHECKING'}
             </span>
           </div>
 

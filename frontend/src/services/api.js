@@ -1,14 +1,5 @@
-import type {
-  HealthStatus,
-  ModelInfo,
-  ModelMetrics,
-  StatsResponse,
-  Inspection,
-  InspectionListResponse,
-} from '../types';
-
 // Read API Base URL from Vite env or local storage override, default to relative ''
-export function getApiBaseUrl(): string {
+export function getApiBaseUrl() {
   const custom = localStorage.getItem('railguard_api_base_url');
   if (custom !== null && custom.trim() !== '') {
     return custom.trim().replace(/\/+$/, '');
@@ -20,7 +11,7 @@ export function getApiBaseUrl(): string {
   return '';
 }
 
-export function setCustomApiBaseUrl(url: string): void {
+export function setCustomApiBaseUrl(url) {
   if (!url || url.trim() === '') {
     localStorage.removeItem('railguard_api_base_url');
   } else {
@@ -28,7 +19,7 @@ export function setCustomApiBaseUrl(url: string): void {
   }
 }
 
-export function buildImageUrl(path: string): string {
+export function buildImageUrl(path) {
   if (!path) return '';
   if (path.startsWith('http://') || path.startsWith('https://')) {
     return path;
@@ -38,7 +29,7 @@ export function buildImageUrl(path: string): string {
   return `${baseUrl}${cleanPath}`;
 }
 
-async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+async function request(endpoint, options = {}) {
   const baseUrl = getApiBaseUrl();
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
   const url = `${baseUrl}${cleanEndpoint}`;
@@ -65,8 +56,8 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
       throw new Error(errorMsg);
     }
 
-    return (await response.json()) as T;
-  } catch (error: unknown) {
+    return await response.json();
+  } catch (error) {
     if (error instanceof Error) {
       throw error;
     }
@@ -76,25 +67,19 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
 
 export const api = {
   // Health
-  getHealth: (): Promise<HealthStatus> => request<HealthStatus>('/api/health'),
+  getHealth: () => request('/api/health'),
 
   // Model Info
-  getModelInfo: (): Promise<ModelInfo> => request<ModelInfo>('/api/model/info'),
+  getModelInfo: () => request('/api/model/info'),
 
   // Metrics
-  getMetrics: (): Promise<ModelMetrics> => request<ModelMetrics>('/api/metrics'),
+  getMetrics: () => request('/api/metrics'),
 
   // Dashboard Stats
-  getStats: (): Promise<StatsResponse> => request<StatsResponse>('/api/inspections/stats'),
+  getStats: () => request('/api/inspections/stats'),
 
   // List Inspections
-  listInspections: (params: {
-    page?: number;
-    page_size?: number;
-    status?: string;
-    search?: string;
-    sort_by?: string;
-  } = {}): Promise<InspectionListResponse> => {
+  listInspections: (params = {}) => {
     const searchParams = new URLSearchParams();
     if (params.page) searchParams.append('page', params.page.toString());
     if (params.page_size) searchParams.append('page_size', params.page_size.toString());
@@ -103,20 +88,20 @@ export const api = {
     if (params.sort_by) searchParams.append('sort_by', params.sort_by);
 
     const query = searchParams.toString();
-    return request<InspectionListResponse>(`/api/inspections${query ? `?${query}` : ''}`);
+    return request(`/api/inspections${query ? `?${query}` : ''}`);
   },
 
   // Inspection Detail
-  getInspection: (id: string): Promise<Inspection> => request<Inspection>(`/api/inspections/${id}`),
+  getInspection: (id) => request(`/api/inspections/${id}`),
 
   // Delete Inspection
-  deleteInspection: (id: string): Promise<{ message: string; id: string }> =>
-    request<{ message: string; id: string }>(`/api/inspections/${id}`, {
+  deleteInspection: (id) =>
+    request(`/api/inspections/${id}`, {
       method: 'DELETE',
     }),
 
   // Run Inference / Detect
-  detect: async (file: File | Blob, filename: string, confidence: number = 0.25): Promise<Inspection> => {
+  detect: async (file, filename, confidence = 0.25) => {
     const formData = new FormData();
     formData.append('file', file, filename);
     formData.append('confidence', confidence.toString());
@@ -142,6 +127,6 @@ export const api = {
       throw new Error(errorMsg);
     }
 
-    return (await response.json()) as Inspection;
+    return await response.json();
   },
 };

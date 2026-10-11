@@ -12,11 +12,10 @@ import {
   Zap,
 } from 'lucide-react';
 import { api } from '../services/api';
-import type { ModelMetrics } from '../types';
 
-export const ModelPerformance: React.FC = () => {
-  const [metrics, setMetrics] = useState<ModelMetrics | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+export const ModelPerformance = () => {
+  const [metrics, setMetrics] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchPerformance = async () => {

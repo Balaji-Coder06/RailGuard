@@ -7,7 +7,7 @@ import { History } from './pages/History';
 import { ModelPerformance } from './pages/ModelPerformance';
 import { Settings } from './pages/Settings';
 
-export const App: React.FC = () => {
+export const App = () => {
   return (
     <BrowserRouter>
       <Routes>

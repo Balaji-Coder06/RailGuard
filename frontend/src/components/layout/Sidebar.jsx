@@ -12,16 +12,10 @@ import {
   Cpu,
 } from 'lucide-react';
 import { api } from '../../services/api';
-import type { HealthStatus, ModelInfo } from '../../types';
 
-interface SidebarProps {
-  className?: string;
-  onNavigate?: () => void;
-}
-
-export const Sidebar: React.FC<SidebarProps> = ({ className = '', onNavigate }) => {
-  const [health, setHealth] = useState<HealthStatus | null>(null);
-  const [modelInfo, setModelInfo] = useState<ModelInfo | null>(null);
+export const Sidebar = ({ className = '', onNavigate }) => {
+  const [health, setHealth] = useState(null);
+  const [modelInfo, setModelInfo] = useState(null);
 
   const fetchStatus = async () => {
     try {
