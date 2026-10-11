@@ -76,7 +76,7 @@ cd RailGuard
 pip install -r backend/requirements.txt
 
 # Start FastAPI server on port 8000
-python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
 Backend will be active at:
@@ -141,17 +141,6 @@ npm run build
 
 ---
 
-## 6. Zero-Cost Free-Tier Deployment
-
-RailGuard is ready for zero-cost deployment:
-- **Frontend**: Vercel Hobby (`vercel.json` included)
-- **Backend**: Hugging Face Spaces Docker (`Dockerfile` on CPU instance included)
-- **Database/Storage**: Supabase Free PostgreSQL & S3 bucket
-
-Consult [`DEPLOYMENT.md`](file:///c:/Users/Balaji/Downloads/RailGuard/DEPLOYMENT.md) for step-by-step instructions.
-
----
-
-## 7. Safety Disclaimer
+## 6. Safety Disclaimer
 
 > **IMPORTANT**: A negative model prediction does not establish that a railway track is structurally safe. Automated AI computer vision assists certified track inspectors and must not replace manual track safety audits and non-destructive ultrasonic testing.
