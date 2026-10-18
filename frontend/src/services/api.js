@@ -4,7 +4,10 @@ export function getApiBaseUrl() {
   if (custom !== null && custom.trim() !== '') {
     return custom.trim().replace(/\/+$/, '');
   }
-  const envUrl = import.meta.env.VITE_API_BASE_URL;
+  // VITE_API_URL was used by the first frontend version. Keep it as a
+  // fallback so existing deployments do not silently call the frontend host
+  // and surface a gateway/model error instead of reaching FastAPI.
+  const envUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL;
   if (envUrl && typeof envUrl === 'string' && envUrl.trim() !== '') {
     return envUrl.trim().replace(/\/+$/, '');
   }
@@ -29,13 +32,28 @@ export function buildImageUrl(path) {
   return `${baseUrl}${cleanPath}`;
 }
 
+async function fetchWithRetry(url, options = {}) {
+  const transientStatuses = new Set([502, 503, 504]);
+  const retryDelays = [250, 750];
+  const method = (options.method || 'GET').toUpperCase();
+  const retryable = method === 'GET' || method === 'HEAD' || method === 'OPTIONS';
+
+  for (let attempt = 0; ; attempt += 1) {
+    const response = await fetch(url, options);
+    if (!retryable || !transientStatuses.has(response.status) || attempt >= retryDelays.length) {
+      return response;
+    }
+    await new Promise((resolve) => setTimeout(resolve, retryDelays[attempt]));
+  }
+}
+
 async function request(endpoint, options = {}) {
   const baseUrl = getApiBaseUrl();
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
   const url = `${baseUrl}${cleanEndpoint}`;
 
   try {
-    const response = await fetch(url, {
+    const response = await fetchWithRetry(url, {
       ...options,
       headers: {
         Accept: 'application/json',
@@ -109,7 +127,7 @@ export const api = {
     const baseUrl = getApiBaseUrl();
     const url = `${baseUrl}/api/detect`;
 
-    const response = await fetch(url, {
+    const response = await fetchWithRetry(url, {
       method: 'POST',
       body: formData,
     });

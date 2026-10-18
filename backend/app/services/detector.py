@@ -10,7 +10,7 @@ from PIL import Image, ImageOps
 from ultralytics import YOLO
 import torch
 
-from ..config import settings
+from ..config import BASE_DIR, ROOT_DIR, settings
 
 class DetectorService:
     def __init__(self):
@@ -23,16 +23,41 @@ class DetectorService:
         self.is_loaded: bool = False
         self.load_error: Optional[str] = None
 
+    @staticmethod
+    def _resolve_model_path(configured_path: str) -> Path:
+        """Resolve a model path consistently from any server working directory."""
+        configured = Path(configured_path).expanduser()
+        if configured.is_absolute():
+            return configured
+
+        candidates = [
+            Path.cwd() / configured,
+            ROOT_DIR / configured,
+            BASE_DIR / configured,
+        ]
+        # Also support a bare filename such as ``best.pt`` in the standard
+        # backend/models location.
+        if configured.name:
+            candidates.extend([
+                ROOT_DIR / configured.name,
+                BASE_DIR / "models" / configured.name,
+            ])
+
+        for candidate in candidates:
+            if candidate.is_file():
+                return candidate.resolve()
+        return candidates[0].resolve()
+
     def load_model(self, model_path: Optional[str] = None):
         """
         Loads YOLO11s checkpoint once during startup.
         """
-        path_to_use = model_path or settings.MODEL_PATH
-        # Fallback to root best.pt if backend/models/best.pt is missing
-        if not os.path.exists(path_to_use):
-            fallback_root = Path(settings.MODEL_PATH).name
-            if os.path.exists(fallback_root):
-                path_to_use = fallback_root
+        path_to_use = str(self._resolve_model_path(model_path or settings.MODEL_PATH))
+        if not os.path.isfile(path_to_use):
+            raise FileNotFoundError(
+                f"Model file not found: {path_to_use}. "
+                "Set MODEL_PATH to the deployed checkpoint location."
+            )
 
         self.model_path = path_to_use
         

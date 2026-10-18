@@ -4,7 +4,7 @@ import mimetypes
 from pathlib import Path
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func, desc, asc
 
@@ -229,10 +229,17 @@ def get_inspection_detail(id: str, db: Session = Depends(get_db)):
 def get_original_image(id: str, db: Session = Depends(get_db)):
     """
     Streams original inspection image.
+    In Supabase mode, redirects to a 1-hour signed URL (private bucket).
     """
     inspection = db.query(Inspection).filter(Inspection.id == id).first()
     if not inspection:
         raise HTTPException(status_code=404, detail="Inspection record not found.")
+
+    if storage_service.is_remote():
+        url = storage_service.get_signed_url(inspection.original_image_path)
+        if not url:
+            raise HTTPException(status_code=404, detail="Original image not found in remote storage.")
+        return RedirectResponse(url=url)
 
     img_path = storage_service.get_image_path(inspection.original_image_path)
     if not img_path:
@@ -245,10 +252,17 @@ def get_original_image(id: str, db: Session = Depends(get_db)):
 def get_annotated_image(id: str, db: Session = Depends(get_db)):
     """
     Streams annotated inspection image.
+    In Supabase mode, redirects to a 1-hour signed URL (private bucket).
     """
     inspection = db.query(Inspection).filter(Inspection.id == id).first()
     if not inspection:
         raise HTTPException(status_code=404, detail="Inspection record not found.")
+
+    if storage_service.is_remote():
+        url = storage_service.get_signed_url(inspection.annotated_image_path)
+        if not url:
+            raise HTTPException(status_code=404, detail="Annotated image not found in remote storage.")
+        return RedirectResponse(url=url)
 
     img_path = storage_service.get_image_path(inspection.annotated_image_path)
     if not img_path:

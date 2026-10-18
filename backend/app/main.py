@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 
 from .config import settings
 from .database import engine, Base
+from . import models  # noqa: F401 — ensures all ORM models are registered on Base.metadata before create_all()
 from .services.detector import detector_service
 from .routers import health, model, inspections, metrics
 

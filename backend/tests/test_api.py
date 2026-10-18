@@ -155,3 +155,94 @@ def test_inspection_history_and_pagination(client):
     # Clean up
     client.delete(f"/api/inspections/{id1}")
     client.delete(f"/api/inspections/{id2}")
+
+
+# ---------------------------------------------------------------------------
+# Signed-URL tests — run without a live Supabase connection via mocking
+# ---------------------------------------------------------------------------
+
+def test_get_signed_url_returns_none_in_local_mode():
+    """get_signed_url must be a no-op when STORAGE_TYPE=local."""
+    from backend.app.services.storage import storage_service
+
+    # storage_service is always initialised with STORAGE_TYPE=local in tests
+    assert storage_service.storage_type == "local"
+    result = storage_service.get_signed_url("original/some-uuid_orig.jpg")
+    assert result is None
+
+
+def test_get_signed_url_calls_create_signed_url(monkeypatch):
+    """
+    When STORAGE_TYPE=supabase, get_signed_url must:
+      - call create_signed_url(ref, expires_in=3600) on the storage bucket
+      - extract the URL from the dict response {"signedURL": "..."}
+      - return the URL string
+    """
+    from unittest.mock import MagicMock, patch
+    from backend.app.services import storage as storage_module
+
+    fake_url = "https://xyz.supabase.co/storage/v1/object/sign/railguard-inspections/original/abc_orig.jpg?token=tok"
+    fake_client = MagicMock()
+    fake_client.storage.from_().create_signed_url.return_value = {"signedURL": fake_url}
+
+    svc = storage_module.StorageService.__new__(storage_module.StorageService)
+    svc.storage_type = "supabase"
+    svc._supabase_client = fake_client
+    svc.original_dir = storage_module.storage_service.original_dir
+    svc.annotated_dir = storage_module.storage_service.annotated_dir
+
+    ref = "original/abc_orig.jpg"
+    result = svc.get_signed_url(ref, expires_in=3600)
+
+    fake_client.storage.from_().create_signed_url.assert_called_once_with(ref, 3600)
+    assert result == fake_url
+
+
+def test_image_endpoints_redirect_to_signed_url(client, monkeypatch):
+    """
+    Image retrieval endpoints must return 307 → signed URL when is_remote() is True.
+    The test mocks storage_service so no Supabase connection is made.
+    """
+    import io
+    from PIL import Image
+    from unittest.mock import patch, MagicMock
+
+    # Create and submit one real inspection (local storage)
+    img = Image.new("RGB", (64, 64), color=(100, 100, 100))
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG")
+    res = client.post(
+        "/api/detect",
+        files={"file": ("tiny.jpg", buf.getvalue(), "image/jpeg")},
+        data={"confidence": "0.25"},
+    )
+    assert res.status_code == 200
+    inspection_id = res.json()["id"]
+
+    fake_signed = "https://xyz.supabase.co/storage/v1/object/sign/bucket/key?token=t"
+
+    from backend.app.routers import inspections as insp_module
+
+    with patch.object(insp_module.storage_service, "is_remote", return_value=True), \
+         patch.object(insp_module.storage_service, "get_signed_url", return_value=fake_signed):
+
+        # Original image endpoint — should redirect
+        orig_res = client.get(
+            f"/api/inspections/{inspection_id}/image/original",
+            follow_redirects=False,
+        )
+        assert orig_res.status_code in (301, 302, 307, 308), \
+            f"Expected redirect, got {orig_res.status_code}"
+        assert orig_res.headers["location"] == fake_signed
+
+        # Annotated image endpoint — should redirect
+        annot_res = client.get(
+            f"/api/inspections/{inspection_id}/image/annotated",
+            follow_redirects=False,
+        )
+        assert annot_res.status_code in (301, 302, 307, 308), \
+            f"Expected redirect, got {annot_res.status_code}"
+        assert annot_res.headers["location"] == fake_signed
+
+    # Clean up
+    client.delete(f"/api/inspections/{inspection_id}")

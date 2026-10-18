@@ -1,0 +1,48 @@
+# fly.toml — RailGuard Backend on Fly.io
+# Generated for: https://fly.io
+
+app = "railguard-backend"
+primary_region = "sin"  # Singapore — closest to India
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "8080"
+  STORAGE_TYPE = "supabase"
+
+# Health-check so Fly knows the app is alive
+[[services]]
+  protocol = "tcp"
+  internal_port = 8080
+  auto_stop_machines = false   # ← never sleep
+  auto_start_machines = true
+  min_machines_running = 1     # ← always at least 1 running
+
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+
+  [[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]
+
+  [services.concurrency]
+    type = "requests"
+    hard_limit = 50
+    soft_limit = 25
+
+  [[services.http_checks]]
+    interval = "30s"
+    timeout = "10s"
+    grace_period = "60s"
+    method = "GET"
+    path = "/api/health"
+
+[resources]
+  # shared-cpu-1x with 1024MB RAM
+  [resources.limits]
+    cpu_kind = "shared"
+    cpus = 1
+    memory_mb = 1024
+

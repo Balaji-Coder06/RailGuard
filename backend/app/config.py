@@ -42,6 +42,7 @@ class Settings(BaseSettings):
     DEFAULT_CONF_THRESHOLD: float = 0.25
     
     # CORS
+    # CORS
     CORS_ORIGINS: list[str] = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",
@@ -49,7 +50,6 @@ class Settings(BaseSettings):
         "http://127.0.0.1:3000",
         "http://localhost:8000",
         "http://127.0.0.1:8000",
-        "*"
     ]
     
     # Historical Benchmark Metrics (Reported test metrics)

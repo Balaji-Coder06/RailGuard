@@ -1,0 +1,17 @@
+__pycache__
+*.py[cod]
+*.pyo
+.env
+.env.*
+!.env.example
+*.db
+*.sqlite3
+uploads/
+data/railguard.db
+tests/
+test_*.py
+*.md
+.git
+.gitignore
+.pytest_cache
+node_modules
